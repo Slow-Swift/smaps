@@ -1,0 +1,32 @@
+:root {
+    --green: #00FF00;
+    --white: #FFFFFF;
+    --black: #000000;
+    --cream: #f7efd7;
+}
+
+body {
+    background: var(--bg);
+    color: var(--fontColor);
+    font-family: monospace;
+    padding: 0;
+    margin: 0;
+}
+
+#map { height: 100vh; }
+
+/* Themes */
+
+.light-theme {
+    --bg: var(--cream);
+    --fontColor: var(--black);
+    --btnBg: var(--black);
+    --btnFontColor: var(--white);
+}
+
+.dark-theme {
+    --bg: var(--black);
+    --fontColor : var(--green);
+    --btnBg: var(--white);
+    --btnFontColor: var(--black);
+}
