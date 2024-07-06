@@ -2,7 +2,9 @@
 
 import { load_graph, find_closest_node } from "./graph_loader.js";
 import { MOA_Star } from "./moastar.js";
+import { Heap } from "./heap.js";
 window.onload = on_load;
+window.Heap = Heap;
 
 async function on_load() {
     console.log("Loaded");
