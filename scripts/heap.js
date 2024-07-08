@@ -68,7 +68,7 @@ export class Heap {
     }
 
     clear() {
-        this.heap.clear()
+        this.heap = [];
     }
 
     #heapifyUp() {

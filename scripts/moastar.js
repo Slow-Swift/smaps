@@ -9,22 +9,22 @@ export class MOA_Star {
      * @param {Graph} graph The graph to pathfind on
      * @param {Function} heuristic Function to get heuritic for each node
      * @param {Number} dimensions The number of objectives to optimize on
-     * @param {string} weight_label The name of the weight in the node data
+     * @param {string} weightLabel The name of the weight in the node data
      */
-    constructor(graph, heuristic, dimensions, weight_label='w') {
+    constructor(graph, heuristic, dimensions, weightLabel='w') {
         this.graph = graph;
         this.heuristic = heuristic;
         this.dimensions = dimensions;
         this.weightLabel = weightLabel;
-        this.openLabels = new Heap((a,b) => compareLex(a[2], b[2]));
-        this.costs = new Heap((a,b) => compareLex(a[2], b[2]));
+        this.openLabels = new Heap((a,b) => Vector.compareLex(a[2], b[2]));
+        this.costs = new Array();
         this.costs_t = new Array();
         this.nodeData = new Map();
         this.backpointers = new Map();
     }
 
     pathfind(start, end) {
-        this.#initializePathfinding();
+        this.#initializePathfinding(start, end);
 
         let label = this.#getNextLabel();
         while (label != null) {
@@ -32,14 +32,14 @@ export class MOA_Star {
             label = this.#getNextLabel();
         }
 
-        return this.getSolutionPaths();
+        return this.#getSolutionPaths();
     }
 
     #initializePathfinding(start, end) {
         this.openLabels.clear();
-        this.costs.clear();
-        this.costs_t.clear();
         this.nodeData.clear();
+        this.costs = [];
+        this.costs_t = [];
         this.#setup_start(start);
         this.#setup_end(end);
     }
@@ -56,6 +56,7 @@ export class MOA_Star {
             const nodeData = this.nodeData.get(node);
             remove(nodeData.open, (e) => Vector.equals(cost, e));
             nodeData.closed.push(cost);
+            remove(nodeData.truncated, (v) => Vector.compareTruncatedDom(v, cost) == GREATER);
             nodeData.truncated.push(cost);
 
             if (!this.#costsDominate(f)) break;
@@ -69,15 +70,43 @@ export class MOA_Star {
 
     #processLabel(label) {
         if (this.target == label[0]) {
-            this.costs.insert(label[1]);
+            this.costs.push(label[1]);
+            remove(this.costs_t, (v) => Vector.compareTruncatedDom(v, label[1]) == GREATER);
             this.costs_t.push(label[1]);
         }
         else this.#expandLabel(label);
     }
 
+    #getSolutionPaths() {
+        let paths = []
+        for (let solution_cost of this.costs) {
+            let currentNode = this.target;
+            let path = [currentNode];
+            paths.push([path, solution_cost]);
+            while (solution_cost != null) {
+                let backpointers = this.backpointers.get(solution_cost.toString());
+                if (backpointers == undefined) { break; }
+
+                for (let backpointer of backpointers) {
+                    let [fromNode, toNode, costIndex] = backpointer;
+                    if (fromNode != currentNode) continue;
+
+                    currentNode = toNode;
+                    solution_cost = this.nodeData.get(currentNode).closed[costIndex];
+                    path.unshift(currentNode);
+                    break;
+                }
+            }
+
+        }
+
+        return paths;
+    }
+
     #expandLabel(label) {
         const [node, cost, f] = label;
-        for (neighbor of this.graph.iterNeighbors(node)) {
+        const nodeData = this.nodeData.get(node);
+        for (let neighbor of this.graph.iterNeighbors(node)) {
             const edgeWeight = this.#getEdgeWeight(node, neighbor);
             const pathCost = cost.add(edgeWeight);
             const solutionEstimate = pathCost.add(this.heuristic(neighbor));
@@ -86,11 +115,12 @@ export class MOA_Star {
 
             if (!this.nodeData.has(neighbor)) {
                 this.nodeData.set(neighbor, createNodeData(pathCost));
-                this.openLabels.insert([neighbor, cost, solutionEstimate]);
-                this.#addBackpointer(pathCost, node, neighbor);
+                this.openLabels.insert([neighbor, pathCost, solutionEstimate]);
+                this.#addBackpointer(pathCost, node, neighbor, nodeData.closed.length - 1);
             } else {
-                this.#insertNonDominated(node, pathCost);
-                this.#addBackpointer(pathCost, node, neighbor);
+                if(this.#insertNonDominated(neighbor, pathCost)) {
+                    this.#addBackpointer(pathCost, node, neighbor, nodeData.closed.length - 1);
+                }
             }
         }
     }
@@ -118,48 +148,53 @@ export class MOA_Star {
     }
 
     #insertNonDominated(node, cost) {
-        nodeData = this.nodeData[node];
-        for (let closed_cost in this.nodeData.closed) {
-            let comparison = Vector.compareTruncatedDom(closed_cost, cost);
+        let nodeData = this.nodeData.get(node);
+
+
+        // We can use the truncated closed costs since this path is guaranteed to be lexicographically
+        // greater than any path in closed
+        for (let closed_cost of nodeData.truncated) {
+            let comparison = Vector.compareDom(closed_cost, cost);
             // Dominated so do nothing
             if (comparison == LESS) return false;
-            if (comparison == EQUAL && closed_cost[0] < cost[0]) return false;
+            // if (comparison == EQUAL && closed_cost[0] < cost[0]) return false;
 
-            // Equal so do nothing but return true since it was kind of added
-            if (comparison == EQUAL && closed_cost[0] == cost[0]) return true;
+            // // Equal so do nothing but return true since it was kind of added
+            // if (comparison == EQUAL && closed_cost[0] == cost[0]) return true;
+            if (Vector.equals(closed_cost, cost)) return true;
         }
 
         let domainates = false;
-        for (let open_cost in this.nodeData.open) {
-            let comparison = Vector.compareTruncatedDom(open_cost, cost);
+        for (let open_cost of nodeData.open) {
+            let comparison = Vector.compareDom(open_cost, cost);
             // Dominated so do nothing
             if (comparison == LESS) return false;
-            if (comparison == EQUAL && open_cost[0] < cost[0]) return false;
 
             // Equal so do nothing but return true since it was kind of added
-            if (comparison == EQUAL && open_cost[0] == cost[0]) return true;
+            if (Vector.equals(open_cost, cost)) return true;
 
             if (comparison == GREATER) {
-                domainates == true;
+                domainates = true;
                 this.openLabels.removeWhere((e) => (e[0] == node && Vector.equals(e[1], open_cost)))
             }
         }
 
         // Remove dominated labels from the open set
         if (domainates) {
-            remove(this.nodeData.open, (v) => Vector.compareDom(v, cost) == GREATER)
+            remove(nodeData.open, (v) => Vector.compareDom(v, cost) == GREATER)
         }
 
-        this.nodeData.open.push(cost);
+        nodeData.open.push(cost);
         this.openLabels.insert([node, cost, cost.add(this.heuristic(node))])
         return true;
     }
 
-    #addBackpointer(cost, n, m) {
-        if (!this.backpointers.has(cost)) {
-            this.backpointers.set(cost.toString(), [[m,n]])
+    #addBackpointer(cost, toNode, fromNode, costIndex) {
+        const backpointer = [fromNode, toNode, costIndex];
+        if (!this.backpointers.has(cost.toString())) {
+            this.backpointers.set(cost.toString(), [backpointer])
         } else {
-            this.backpointers.get(cost).push([m,n]);
+            this.backpointers.get(cost.toString()).push(backpointer);
         }
     }
 

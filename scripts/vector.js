@@ -1,3 +1,5 @@
+
+
 const GREATER = 1;
 const EQUAL = 0;
 const LESS = -1;
@@ -6,13 +8,25 @@ export class Vector extends Array {
     add(other) {
         let result = new Vector(this.length);
         for (let i=0; i<this.length; i++) {
-            result = vectorA[i] + vectorB[i];
+            result[i] = this[i] + other[i];
         }
         return result;
     }
 
     truncated() {
         return this.splice(1);
+    }
+
+    inspect(depth, opts) {
+        return this.toString();
+    }
+
+    get [Symbol.toStringTag]() {
+        return this.toString();
+    }
+
+    toString() {
+        return `<${this.join(', ')}>`;
     }
 
     static compareLex(vectorA, vectorB) {
