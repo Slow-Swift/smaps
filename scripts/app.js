@@ -19,14 +19,33 @@ async function on_load() {
     setup_callbacks();
     initialize_interactive_elements();
 
-    
+    window.profile = new RouteProfile(
+        new RouteFilter(
+            RouteFilterFunction.ALL,
+            false,
+            [
+                new RouteFilter(
+                    RouteFilterFunction.EQ,
+                    true,
+                    "barrier",
+                    "kerb"
+                ),
+                new RouteFilter(
+                    RouteFilterFunction.EQ,
+                    true,
+                    "kerb",
+                    "raised",
+                )
+            ]
+        )
+    );
 }
 
 async function initialize_graph() {
     window.graph = await load_graph();
     for (let edge_data of window.graph.iterEdges()) {
         let length = edge_data.length;
-        let crossing = edge_data.tags?.footway == "crossing" ? 1 : 0;
+        let crossing = 0 // edge_data.tags?.footway == "crossing" ? 1 : 0;
         let weight = new Vector(length, crossing);
         edge_data.weight = weight;
     }
@@ -58,9 +77,9 @@ function updateRouteDropdown(route_count) {
     }
 }
 
-function setup_callbacks() {
+function setup_callbacks() { 
     window.updateRouteDropdown = updateRouteDropdown;
-    document.getElementById('btn-calculate-routes').onclick = window.map.pathfind.bind(window.map);
+    document.getElementById('btn-calculate-routes').onclick = () => window.map.pathfind(window.profile);
     document.getElementById("show-data-btn").onclick = on_show_data_pressed;
 
     window.show_filters = () => window.gdc.showFilterMenu();

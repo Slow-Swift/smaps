@@ -38,7 +38,7 @@ export class MapManager {
         }
     }
 
-    pathfind() {
+    pathfind(profile) {
         if (this.startNodeId == undefined || this.endNodeId == undefined) {
             alert("Please choose a start and end location.");
             return;
@@ -48,7 +48,7 @@ export class MapManager {
         this.routeLayer.clearLayers();
 
         console.log("Calculating Routes...");
-        const paths = window.namoa_star.pathfind(this.startNodeId, this.endNodeId);
+        const paths = window.namoa_star.pathfind(this.startNodeId, this.endNodeId, profile);
         console.log(`Found ${paths.length} paths.`);
 
         const colors = ['blue', 'green', 'red', 'yellow', 'orange']
