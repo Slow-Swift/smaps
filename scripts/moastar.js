@@ -23,7 +23,8 @@ export class MOA_Star {
         this.backpointers = new Map();
     }
 
-    pathfind(start, end) {
+    pathfind(start, end, profile) {
+        this.profile = profile;
         this.#initializePathfinding(start, end);
 
         let label = this.#getNextLabel();
@@ -107,6 +108,7 @@ export class MOA_Star {
         const [node, cost, f] = label;
         const nodeData = this.nodeData.get(node);
         for (let neighbor of this.graph.iterNeighbors(node)) {
+            if (!this.#isEdgeTraversible(node, neighbor)) continue;
             const edgeWeight = this.#getEdgeWeight(node, neighbor);
             const pathCost = cost.add(edgeWeight);
             const solutionEstimate = pathCost.add(this.heuristic(neighbor));
@@ -123,6 +125,12 @@ export class MOA_Star {
                 }
             }
         }
+    }
+
+    #isEdgeTraversible(fromNode, toNode) {
+        if (this.profile == null || this.profile == undefined) return true;
+        if (!this.profile.isNodeAllowed(this.graph.getVertex(toNode))) return false;
+        return this.profile.isEdgeAllowed(this.graph.getEdge(fromNode, toNode));
     }
 
     #getEdgeWeight(node1, node2) {

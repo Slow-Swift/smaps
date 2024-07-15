@@ -16,25 +16,38 @@ body {
 #map { height: 90vh; }
 
 #controls { 
+    padding: 0px 20px;
     height: 10vh;
     align-content: center;
+    justify-content: center;
 }
 
-button {
-    margin: 10px;
-    padding: 10px;
-    font-size: 1.2em;
-    border-radius: 15px;
-    border-width: 3px;
-    background-color: rgb(70, 70, 70);
-    border-color: grey;
-    color: white;
+.btn {
+    background-color: #4CAF50; /* Green background */
+    border: 2px solid #4CAF50; /* Green border */
+    color: white; /* White text */
+    padding: 10px 20px; /* Some padding */
+    text-align: center; /* Centered text */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 4px 2px; /* Some margin */
+    cursor: pointer; /* Pointer/hand icon */
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+    border-radius: 5px; /* Rounded corners */
+    transition-duration: 0.4s; /* Transition effect */
+}
+
+.btn:hover {
+    background-color: white; /* White background */
+    color: black; /* Black text */
+    border: 2px solid #4CAF50; /* Green border */
 }
 
 /* Themes */
 
 .light-theme {
-    --bg: var(--cream);
+    --bg: var(--white);
     --fontColor: var(--black);
     --btnBg: var(--black);
     --btnFontColor: var(--white);
@@ -45,4 +58,341 @@ button {
     --fontColor : var(--green);
     --btnBg: var(--white);
     --btnFontColor: var(--black);
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 999;
+    bottom: 100%;
+}
+
+.dropdown-content label {
+    display: block;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.dropdown-content input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.dropdown-content label:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.floating-window {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 500px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+    z-index: 999;
+    top: 50px;
+    left: 50%;
+    text-align: center;
+    transform: translate(-50%);
+}
+
+.floating-window  p {
+    display: inline-block;
+}
+
+.draggable-header {
+    padding: 15px 0;
+    user-select: none;
+}
+
+.draggable-header h3 {
+    margin: 0;
+}
+
+.boxed {
+    background-color: rgb(200, 200, 200);
+    padding: 5px;
+}
+
+.small-btn {
+    background-color: #4CAF50; /* Green background */
+    border: 2px solid #4CAF50; /* Green border */
+    color: white; /* White text */
+    padding: 2px 8px; /* Some padding */
+    text-align: center; /* Centered text */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 4px 2px; /* Some margin */
+    cursor: pointer; /* Pointer/hand icon */
+    border-radius: 0px; /* Rounded corners */
+    transition-duration: 0.4s; /* Transition effect */
+}
+
+.close-btn {
+    position:absolute;
+    top: 5px;
+    right: 10px;
+    background-color: #00000000;
+    border: none; /* Green border */
+    padding: 3px 8px; /* Some padding */
+    text-align: center; /* Centered text */
+    text-decoration: none; /* Remove underline */
+    display: inline-block; /* Inline-block element */
+    font-size: 16px; /* Increase font size */
+    margin: 4px 2px; /* Some margin */
+    cursor: pointer; /* Pointer/hand icon */
+    transition-duration: 0.4s; /* Transition effect */
+    color: grey;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.close-btn:hover {
+    border: none;
+    color: black;
+    border-radius: 50%;
+}
+
+.confirmer {
+    display: none;
+    position: absolute;
+    background-color: #f7efd7;
+    width: 100%;
+    z-index: 999;
+    top: 80%;
+    height: 20%;
+    text-align: center;
+}
+
+.confirmer button {
+    margin: 20px;
+}
+
+.collapsible {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+} 
+
+.active, .collapsible:hover {
+    background-color: #ccc;
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.collapsible-content {
+    position: relative;
+    max-height: 0px;
+    padding: 0, 18px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    background-color: #ffffff;
+    transition: max-height 0.2s ease-out;
+}
+
+.collapsible:after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    font-size: 13px;
+    color: white;
+    float: right;
+    margin-left: 5px;
+}
+
+.active:after {
+    content: "\2796"; /* Unicode character for "minus" sign (-) */
+}
+
+/* From: https://codepen.io/dmondma/pen/OJPpWwY */
+
+.skin-2 .num-in {
+    display: inline-block;
+    margin-top: 10px;
+	background: #FFFFFF;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+	border-radius: 25px;
+	height: 40px;
+	width: 110px;
+    user-select: none;
+}
+
+.skin-2 .num-in	span {
+  width: 40%;
+  display: inline;
+  height: 40px;
+  position: relative;
+  user-select: none;
+}
+
+.minus:after {
+    content: "\2796"; /* Unicode character for "minus" sign (-) */
+}
+
+.plus:after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+}
+
+.disabled:after {
+    opacity: 0.5;
+}
+
+.num-block {
+    margin-bottom: 10px;
+}
+
+.skin-2 .num-in input {
+    display: inline;
+    width: 20%;
+    height: 38px;
+    border: none;
+    text-align: center;
+}
+
+.tag-filter {
+    padding-bottom: 10px;
+    background-color: #ffffff;
+}
+
+.tag-filter.selected {
+    background-color: #f1f1f1;
+}
+
+.tag-filter input[type="text"] {
+    border-radius: 25px;
+	background: #FFFFFF;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+    border: none;
+    height: 30px;
+    padding-left: 10px;
+    width: 150px;
+}
+
+.tag-filter input[type="color" i] {
+    border-radius: 50%;
+	background: #FFFFFF;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.8);
+    inline-size: 30px;
+    block-size: 30px;
+    border-style: none;
+    padding: 0px;
+    transform: translateY(35%);
+}
+
+.tag-filter input[type="color" i]::-webkit-color-swatch-wrapper {
+    padding: 0px;
+    border: none;
+}
+
+.tag-filter input[type="color" i]::-webkit-color-swatch {
+    border-radius: 50%;
+    border: none;
+}
+
+.tag-filter input[type="color" i]::-moz-color-swatch {
+    border-radius: 50%;
+    border: none
+}
+
+.tag-filter input[type="checkbox"] {
+    appearance: none;
+    background-color: #fff;
+    margin: 0;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 25px;
+    transform: translateY(4.5px);
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+    display: grid;
+    place-content: center;
+}
+  
+input[type="checkbox"]::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    transform: scale(0);
+    transition: 0.12s transform ease-in-out;
+    border-radius: 25px;
+    box-shadow: inset 20px 20px rgb(130, 38, 229);
+}
+  
+input[type="checkbox"]:checked::before {
+    transform: scale(1);
+}
+  
+.add-btn {
+    position:absolute;
+    display: grid;
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border-radius: 25px;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+    place-content: center;
+    top: 10px;
+    right: 10px;
+}
+
+.add-btn::after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    transform: translateY(-1px);
+    scale: 1.3;
+}
+
+.delete-btn {
+    position:absolute;
+    display: grid;
+    width: 40px;
+    height: 40px;
+    background-color: #fff;
+    border-radius: 25px;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.15);
+    place-content: center;
+    top: 10px;
+    left: 10px;
+}
+
+.delete-btn::after {
+    content: '\02795'; /* Unicode character for "plus" sign (+) */
+    transform: rotate(45deg);
+    scale: 1.3;
+}
+
+.search-input {
+    height: 25px;
+    border: none;
+    border-radius: 25px;
+	box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.5);
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.save-item {
+    font-size: 1.3em;
+    padding: 10px;
+}
+
+.save-item h4 {
+    padding: 0;
+    margin: 0;
+}
+
+.save-item.selected {
+    background-color: #f1f1f1;
 }

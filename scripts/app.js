@@ -1,17 +1,25 @@
 'use strict';
 
-import { load_graph, find_closest_node } from "./graph_loader.js";
+import { load_graph } from "./graph_loader.js";
 import { MOA_Star } from "./moastar.js";
-import { Heap } from "./heap.js";
-import { Graph } from "./graph.js";
 import { Vector } from "./vector.js";
+import { MapManager } from "./map_manager.js";
+import { GraphDataLayer } from "./graph_data_layer.js";
+import { GraphDataConfigurator } from "./graph_data_configurator.js";
+import { RouteFilter, RouteFilterFunction, RouteProfile } from "./route_profile.js";
+
 window.onload = on_load;
-window.Heap = Heap;
 
 async function on_load() {
     console.log("Loaded");
-    initialize_map();
     await initialize_graph();
+    window.map = new MapManager(graph);
+    window.graphDataLayer = new GraphDataLayer(window.map);
+    window.gdc = new GraphDataConfigurator(window.map);
+    setup_callbacks();
+    initialize_interactive_elements();
+
+    
 }
 
 async function initialize_graph() {
@@ -25,79 +33,117 @@ async function initialize_graph() {
     window.namoa_star = new MOA_Star(graph, (v) => Vector.zeros(2), 2, 'weight');
 }
 
-function initialize_map() {
-    let map = L.map('map').setView([49.21, -122.92], 15);
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
-
-    window.route_layer = L.layerGroup().addTo(map);
-
-    create_markers(map);
-
-    document.getElementById('btn-calculate-routes').onclick = on_calculate_routes_pressed;
+function on_show_data_pressed() {
+    const visible = window.graphDataLayer.toggleVisible();
+    this.innerHTML = visible ? "Hide Graph Data" : "Show Graph Data";
 }
 
-function create_markers(map) {
-    const green_icon = L.icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        shadowSize: [41, 41]
-    })
-    
-    const start_marker = L.marker([0, 0], {opacity: 0}).addTo(map);
-    const end_marker = L.marker([0, 0], {opacity: 0, icon: green_icon}).addTo(map);
-    const start_node_marker = L.circleMarker([0,0], {opacity: 1, fillOpacity: 1, radius: 10 }).addTo(map);
-    const end_node_marker = L.circleMarker([0,0], {opacity: 0, fillOpacity: 0, radius: 10, color: 'green', fillColor: 'green'}).addTo(map);
-    
-    map.on('click', (e) => update_marker(start_marker, start_node_marker, e.latlng, true));
-    
-    map.on('contextmenu', (e) => update_marker(end_marker, end_node_marker, e.latlng, false));
-}
+function updateRouteDropdown(route_count) {
+    const dropdownContent = document.getElementById('routeDropdownContent');
+    dropdownContent.innerHTML = ''; // Clear existing options
 
-function update_marker(pos_marker, node_marker, pos, is_start) {
-    pos_marker.setLatLng(pos);
-    pos_marker.setOpacity(1);
-    node_marker.setStyle({opacity: 1, fillOpacity: 1})
-    const nearest_node = find_closest_node(window.graph, [pos.lat, pos.lng]);
-    node_marker.setLatLng(nearest_node.latlon);
-
-    if (is_start) {
-        window.start_node_id = nearest_node.id;
-    } else {
-        window.end_node_id = nearest_node.id;
+    for (let i = 1; i <= route_count; i++) {
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = 'routes';
+        checkbox.value = `Route ${i}`;
+        checkbox.checked = true;
+        checkbox.addEventListener('change', () => window.map.setRouteVisibility(i - 1, checkbox.checked));
+        label.addEventListener('mouseover', () => window.map.setRouteBold(i-1, true));
+        label.addEventListener('mouseout', () => window.map.setRouteBold(i-1, false));
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` Route ${i}`));
+        dropdownContent.appendChild(label);
     }
 }
 
-function on_calculate_routes_pressed() {
-    const start_node_id = window.start_node_id;
-    const end_node_id = window.end_node_id;
-    if (start_node_id == undefined || end_node_id == undefined) {
-        console.log("Does not have both start and end nodes.");
-        return;
-    }
+function setup_callbacks() {
+    window.updateRouteDropdown = updateRouteDropdown;
+    document.getElementById('btn-calculate-routes').onclick = window.map.pathfind.bind(window.map);
+    document.getElementById("show-data-btn").onclick = on_show_data_pressed;
 
-    route_layer.clearLayers();
+    window.show_filters = () => window.gdc.showFilterMenu();
+    window.hide_filters = () => window.gdc.hideFilterMenu();
+    window.show_save_menu = () => window.gdc.showSaveMenu();
+    window.hide_save_menu = () => window.gdc.hideSaveMenu();
+}
 
-    console.log("Calculating Routes...");
-    let paths = window.namoa_star.pathfind(start_node_id, end_node_id);
-    console.log(`Found ${paths.length} paths.`);
+function initialize_interactive_elements() {
+    const collapsibles = document.getElementsByClassName("collapsible");
 
-    const colors = ['blue', 'green', 'red', 'yellow', 'orange']
-    let i=0;
-    for (let path of paths) {
-        let [nodes, cost] = path;
-        let positions = [];
-        for (let node_id of nodes) {
-            let node = window.graph.getVertex(node_id);
-            positions.push(node.latlon);
+    function setCollabsibleActive(collapsible, active) {
+        if (active) {
+            collapsible.classList.add('active');
+        } else {
+            collapsible.classList.remove('active');
         }
 
-        L.polyline(positions, {color: colors[i % colors.length]}).addTo(route_layer);
-        i++;
+        const content = collapsible.nextElementSibling;
+        let height = content.scrollHeight + 5;
+        height = "300px";
+        content.style.maxHeight = active ? height : 0;
+    }
+
+    for (const collapsible of collapsibles) {
+        collapsible.addEventListener("click", function() {
+            setCollabsibleActive(this, !this.classList.contains('active'));
+            for (const collapsible of collapsibles) {
+                if (collapsible != this)
+                    setCollabsibleActive(collapsible, false);
+            }
+        });
+    }
+
+    const numSpinners = document.getElementsByClassName("num-in");
+    for (const numSpinner of numSpinners) {
+        const min = parseInt(numSpinner?.attributes?.min?.value);
+        const max = parseInt(numSpinner?.attributes?.max?.value);
+        const buttons = numSpinner.getElementsByTagName('span');
+        for (const button of buttons) {
+            button.onclick = () => {
+                if (button.classList.contains('disabled')) return;
+                const value = button.classList.contains('minus') ? -1 : 1;
+                const input = button.parentElement.getElementsByClassName('in-num')[0];
+                const current = parseFloat(input.value)
+                const newValue = current + value;
+                input.value = newValue;
+                for (const b of button.parentElement.getElementsByTagName('span'))
+                    b.classList.remove('disabled');
+
+                if (newValue == max || newValue == min) {
+                    button.classList.add('disabled');
+                }
+
+                numSpinner.onchanged?.(newValue);
+            }
+        }
+    }
+
+    for (const draggable of document.getElementsByClassName('draggable')) {
+        setupDraggable(draggable);
+    }
+}
+
+//* From: https://www.w3schools.com/howto/howto_js_draggable.asp
+function setupDraggable(element) {
+    const dragArea = element.getElementsByClassName('draggable-header')[0] ?? element;
+    dragArea.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e.preventDefault();
+
+        document.onmouseup = closeDragEvent;
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        element.style.top = (element.offsetTop + e.movementY) + "px";
+        element.style.left = (element.offsetLeft + e.movementX) + "px";
+    }
+
+    function closeDragEvent() {
+        document.onmouseup = null;
+        document.onmousemove = null;
     }
 }

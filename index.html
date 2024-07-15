@@ -20,7 +20,90 @@
 <body class="light-theme">
     <div id="map"></div>
     <div id="controls">
-        <button id="btn-calculate-routes">Calculate Routes</button>
+        <button id="btn-calculate-routes", class="btn">Calculate Routes</button>
+        <div class="dropdown">
+            <button class="btn">Select the routes to display</button>
+            <div id="routeDropdownContent" class="dropdown-content"></div>
+        </div>
+        <button id="show-data-btn" class="checkbox-btn btn">Show Graph Data</button>
+        <button class="checkbox-btn btn", onclick="window.show_filters()">Show Graph Filters</button>
+    </div>
+
+    
+    <div id="bbox-confirmer" class="confirmer btn"> 
+        <button class="btn">Done</button>
+    </div>
+    
+    <div id="filter-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Graph Data Settings</h3>
+        </div>
+        <!-- <button class="close-btn", onclick="window.hide_filters()">x</button> -->
+        <div>
+            <p>Bounding Box:</p>
+            <p id="lat-range", class="boxed">42.5 - 43.5</p>
+            <p id="lon-range", class="boxed">Test2</p>
+            <button id='change-bbox-btn' class="small-btn btn">Change</button>
+        </div>
+        <div>
+            <button class="collapsible">Node Filters</button>
+            <div class="collapsible-content">
+                <div id="add-node-filter-btn" class="add-btn"></div>
+                <div id="delete-node-filter-btn" class="delete-btn"></div>
+                <div class="num-block skin-2">
+                    <p>Node Size: </p>
+                    <div id="node-size-spinner" class="num-in" min=1, max=20>
+                        <span class="minus disabled"></span>
+                        <input id="node-size-input", type="text" class="in-num" value="1" readonly="">
+                        <span class="plus"></span> 
+                    </div>
+                </div>
+                <div id="node-filters"></div>
+            </div>
+        </div>
+        <div>
+            <button class="collapsible">Edge Filters</button>
+            <div class="collapsible-content">
+                <div id="add-edge-filter-btn" class="add-btn"></div>
+                <div id="delete-edge-filter-btn" class="delete-btn"></div>
+                <div class="num-block skin-2">
+                    <p>Edge Size: </p>
+                    <div id="edge-size-spinner" class="num-in" min=1, max=20>
+                        <span class="minus disabled"></span>
+                        <input id="edge-size-input", type="text" class="in-num" value="3" readonly="">
+                        <span class="plus"></span> 
+                    </div>
+                </div>
+                <div id="edge-filters">
+                </div>
+            </div>
+        </div>
+        <div>
+            <button class="btn" onclick="window.hide_filters()">Close</button>
+            <button id="apply-filters-btn" class="btn">Apply</button>
+            <button id="save-menu-btn" class="btn" onclick="window.show_save_menu()">Saves</button>
+        </div>
+    </div>
+    
+    <div id="save-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Saved Configurations</h3>
+        </div>
+        <div>
+            <p>Save Name:</p>
+            <input id="save-name-input" class="search-input" type="text">
+            <button id="save-config-btn" class="small-btn btn">Save</button>
+        </div>
+        <div id="save-list" class="save-list">
+            <div class="save-item">
+                <h4>Save 1</h4>
+            </div>
+        </div>
+        <div>
+            <button class="btn" onclick="hide_save_menu()">Close</button>
+            <button id="load-config-btn" class="btn">Load</button>
+            <button id="delete-config-btn" class="btn">Delete</button>
+        </div>
     </div>
 </body>
 </html>
