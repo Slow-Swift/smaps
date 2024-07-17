@@ -37,6 +37,25 @@ async function on_load() {
                     "raised",
                 )
             ]
+        ),
+        new RouteFilter(
+            RouteFilterFunction.ANY,
+            true,
+            [
+                new RouteFilter(
+                    RouteFilterFunction.NEQ,
+                    true,
+                    "highway",
+                    "steps"
+                ),
+                new RouteFilter(
+                    RouteFilterFunction.EQ,
+                    true,
+                    "ramp",
+                    "yes",
+                )
+            ]
+            
         )
     );
 }

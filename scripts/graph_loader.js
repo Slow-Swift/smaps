@@ -1,13 +1,15 @@
 import { Graph } from "./graph.js";
 
-export async function load_graph() {
+let custom_ids = -1;
+
+export async function load_graph(max_edge_dst) {
     console.log("Loading graph...")
     
     let elements = await get_sidewalk_json();
     console.log(`Loaded JSON with ${elements.length} elements.`);
 
     console.log("Building graph...")
-    let graph = build_graph(elements);
+    let graph = build_graph(elements, max_edge_dst);
     console.log(`Built graph with ${graph.order} nodes and ${graph.size} edges.`)
 
     return graph;
@@ -43,7 +45,7 @@ async function get_sidewalk_json() {
     return result.elements; 
 }
 
-function build_graph(elements) {
+function build_graph(elements, max_edge_dst) {
     const graph = new Graph();
 
     // Add nodes to the graph
@@ -56,7 +58,7 @@ function build_graph(elements) {
     // Add edges to the graph
     for (let element of elements) {
         if (element.type == "way") {
-            add_way_to_graph(graph, element);
+            add_way_to_graph(graph, element, max_edge_dst);
         }
     }
 
@@ -73,15 +75,41 @@ function add_node_to_graph(graph, node) {
     graph.addVertex(node.id, node_data);
 }
 
-function add_way_to_graph(graph, way) {
+function add_way_to_graph(graph, way, max_dst) {
     const nodes = way.nodes;
 
     // Add all the edges that make up the way
     for (let i = 0, j = 1; j < nodes.length; i++, j++) {
         // Calculate edge length
-        const node_0 = graph.getVertex(nodes[i]);
+        let node_0 = graph.getVertex(nodes[i]);
         const node_1 = graph.getVertex(nodes[j]);
         const distance = haversine(node_0.latlon, node_1.latlon);
+
+        if (max_dst && distance > max_dst) {
+            let count = Math.ceil(distance / max_dst);
+            let dlat = (node_1.latlon[0] - node_0.latlon[0]) / count;
+            let dlon = (node_1.latlon[1] - node_0.latlon[1]) / count;
+            for (let k=1; k<count; k++) {
+                let newLat = node_0.latlon[0] + dlat;
+                let newLon = node_0.latlon[1] + dlon;
+                const newNode = {
+                    id: custom_ids--,
+                    lat: newLat,
+                    lon: newLon,
+                    latlon: [newLat, newLon],
+                }
+                add_node_to_graph(graph, newNode);
+
+                const distance = haversine(node_0.latlon, node_1.latlon);
+                const edge_data = {
+                    way_id: way.id,
+                    tags: way.tags,
+                    length: distance,
+                };
+                graph.addEdge(node_0.id, newNode.id, edge_data);
+                node_0 = newNode;
+            }
+        }
 
         // Add edge to the graph
         const edge_data = {
@@ -89,7 +117,7 @@ function add_way_to_graph(graph, way) {
             tags: way.tags,
             length: distance,
         };
-        graph.addEdge(nodes[i], nodes[j], edge_data);
+        graph.addEdge(node_0.id, node_1.id, edge_data);
     }
 }
 

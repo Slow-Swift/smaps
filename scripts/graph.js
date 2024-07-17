@@ -75,6 +75,7 @@ export class Graph {
 const BIT_OFFSET = 64n;
 
 function hash_edge(v1, v2) {
+    return (v1 < v2) ? `${v1},${v2}` : `${v2},${v1}`;
     let v1n = BigInt(v1);
     let v2n = BigInt(v2);
 
@@ -85,5 +86,7 @@ function hash_edge(v1, v2) {
 }
 
 function unhash_edge(edge_hash) {
+    const parts = edge_hash.split(',');
+    return [Number(parts[0]), Number(parts[1])];
     return [Number(edge_hash >> BIT_OFFSET), Number(edge_hash & ((1n << BIT_OFFSET) - 1n))];
 }

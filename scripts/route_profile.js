@@ -59,7 +59,7 @@ export class RouteFilter {
             case RouteFilterFunction.EQ: return tags[this.#tag] == this.#value;
             case RouteFilterFunction.NEQ: return tags[this.#tag] != this.#value;
             case RouteFilterFunction.IN: return tags.hasOwnProperty(this.#tag);
-            case RouteFilter.NOT_IN: return !tags.hasOwnProperty(this.#tag);
+            case RouteFilterFunction.NOT_IN: return !tags.hasOwnProperty(this.#tag);
         }
     }
 
@@ -71,7 +71,7 @@ export class RouteFilter {
     }
 
     #filterAny(tags) {
-        for (const filter in this.filters) {
+        for (const filter of this.#filters) {
             if (filter.isAllowed(tags)) return this.#allow;
         }
         return !this.#allow;
