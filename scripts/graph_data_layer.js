@@ -43,10 +43,15 @@ export class GraphDataLayer {
             if (!isInBox(node.getLatLng(), this.filterInfo.bbox)) {
                 node.removeFrom(this.mapLayer);
                 continue;
-            }
+            } 
 
-            const [visible, color] = filter(node.tags, this.filterInfo.nodeFilters);
+            let [visible, color] = filter(node.tags, this.filterInfo.nodeFilters);
+            if (node.tags.ele) {
+                const heightPercent = Math.floor(node.tags.ele * 255 / 120);
+                // color = `#${(heightPercent).toString(16)}00${(255 - heightPercent).toString(16)}`;
+            } 
 
+ 
             if (!visible) {
                 node.removeFrom(this.mapLayer);
             } else {
@@ -71,7 +76,7 @@ export class GraphDataLayer {
             const line = L.polyline([node1.latlon, node2.latlon]).addTo(this.mapLayer);
             line.tags = edgeData.tags; 
             this.edges.push(line);
-            line.bindPopup(createMessage(`Way ${edgeData.way_id}`, edgeData.tags));
+            line.bindPopup(createMessage(`Way ${edgeData.way_id}`, edgeData.tags, [`Length ${edgeData.length}`]));
         }
     
         for (let node of graph.iterVertices()) {
@@ -83,8 +88,11 @@ export class GraphDataLayer {
     }
 }
 
-function createMessage(header, tags) {
+function createMessage(header, tags, extraInfo=[]) {
     let message = `<h3>${header}</h3>`;
+    for (const ei of extraInfo) {
+        message += `<p>${ei}</p>`;
+    }
     if (tags != undefined) {
         message += "<p>Tags:</br>";
         for (let tag in tags) {

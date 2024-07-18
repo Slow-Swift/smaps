@@ -12,6 +12,8 @@ export async function load_graph(max_edge_dst) {
     let graph = build_graph(elements, max_edge_dst);
     console.log(`Built graph with ${graph.order} nodes and ${graph.size} edges.`)
 
+    await getNodeElevations(graph);
+
     return graph;
 }
 
@@ -65,6 +67,54 @@ function build_graph(elements, max_edge_dst) {
     return graph;
 }
 
+async function getNodeElevations(graph, max_edge_dst) {
+    const locations = []
+    const data = {locations: locations};
+    for (const node of graph.iter_vertices()) {
+        locations.push({
+            latitude: node[1].latlon[0],
+            longitude: node[1].latlon[1],
+        })
+    }
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    }
+
+    const file_prefix = max_edge_dst ? max_edge_dst : "unlimited"
+    const elevations = await fetch(`/data/sidewalk_elevations_${file_prefix}.json`).then(
+        (data)=>data.json()
+    ).catch(async e => {
+        console.log("Fetching Node Elevations");
+            const response = await fetch(
+                "https://api.open-elevation.com/api/v1/lookup", 
+                {
+                    method: "POST",
+                    headers: headers,
+                    body: JSON.stringify(data)
+                }
+            ).then(
+                (data)=>data.json()
+            );
+            console.log("Fetched Node Elevations");
+            return response.results;
+        }
+    );
+     
+    window.elevationText = elevations;
+
+    let i = 0; 
+    for (const node of graph.iter_vertices()) {
+        node[1].elevation = elevations[i].elevation;
+        if (node[1].tags == undefined) node[1].tags = {};
+        node[1].tags.ele = elevations[i].elevation;
+        i++;
+    }
+
+    console.log("Loaded node elevations");
+}
+
 function add_node_to_graph(graph, node) {
     const node_data = {
         id: node.id,
@@ -77,13 +127,16 @@ function add_node_to_graph(graph, node) {
 
 function add_way_to_graph(graph, way, max_dst) {
     const nodes = way.nodes;
+    if (way.id == 1077846306) {
+        console.log("hey");
+    }
 
     // Add all the edges that make up the way
     for (let i = 0, j = 1; j < nodes.length; i++, j++) {
         // Calculate edge length
         let node_0 = graph.getVertex(nodes[i]);
         const node_1 = graph.getVertex(nodes[j]);
-        const distance = haversine(node_0.latlon, node_1.latlon);
+        let distance = haversine(node_0.latlon, node_1.latlon);
 
         if (max_dst && distance > max_dst) {
             let count = Math.ceil(distance / max_dst);
@@ -100,7 +153,7 @@ function add_way_to_graph(graph, way, max_dst) {
                 }
                 add_node_to_graph(graph, newNode);
 
-                const distance = haversine(node_0.latlon, node_1.latlon);
+                const distance = haversine(node_0.latlon, newNode.latlon);
                 const edge_data = {
                     way_id: way.id,
                     tags: way.tags,
@@ -110,6 +163,7 @@ function add_way_to_graph(graph, way, max_dst) {
                 node_0 = newNode;
             }
         }
+        distance = haversine(node_0.latlon, node_1.latlon);
 
         // Add edge to the graph
         const edge_data = {
@@ -123,25 +177,24 @@ function add_way_to_graph(graph, way, max_dst) {
 
 /**
  * Calculates the haversine distance between point A and B.
- * From: https://stackoverflow.com/questions/14560999/using-the-haversine-formula-in-javascript
+ * From: https://www.movable-type.co.uk/scripts/latlong.html
  * @param {number[]} latlonA [lat, lon] pointA.
  * @param {number[]} latlonB [lat, lon] pointB.
  * @returns {number} The distance between point A and B.
  */
 function haversine([lat1, lon1], [lat2, lon2]) {
-    const toRadian = angle => angle * Math.PI / 180;
-    const distance = (a, b) => toRadian(b - a); 
     const EARTH_RADIUS_METERS = 6371e3;
+    const lat1Radian = lat1 * Math.PI / 180;
+    const lat2Radian = lat2 * Math.PI / 180;
+    const dlatRadian = (lat2 - lat1) * Math.PI / 180;
+    const dlonRadian = (lon2 - lon1) * Math.PI / 180;
 
-    const dlat = distance(lat1, lat2);
-    const dlon = distance(lon1, lon2);
-
-    // Haversine Formula:
-    const a = 
-        Math.pow(Math.sin(dlat / 2), 2) +
-        Math.pow(Math.sin(dlon / 2), 2) * Math.cos(toRadian(lat1)) * Math.cos(toRadian(lat2));
-    const c = 2 * Math.asin(Math.sqrt(a));
-
-    return c * EARTH_RADIUS_METERS;
-
+    const a = Math.sin(dlatRadian / 2) * Math.sin(dlatRadian / 2) +
+            Math.cos(lat1Radian) * Math.cos(lat2Radian) *
+            Math.sin(dlonRadian / 2) * Math.sin(dlonRadian / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = EARTH_RADIUS_METERS * c;
+    return distance;
 }
+
+window.haversine = haversine

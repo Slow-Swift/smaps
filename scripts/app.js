@@ -61,7 +61,7 @@ async function on_load() {
 }
 
 async function initialize_graph() {
-    window.graph = await load_graph();
+    window.graph = await load_graph(30);
     for (let edge_data of window.graph.iterEdges()) {
         let length = edge_data.length;
         let crossing = 0 // edge_data.tags?.footway == "crossing" ? 1 : 0;
