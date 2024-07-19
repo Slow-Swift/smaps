@@ -75,7 +75,7 @@ export class MapManager {
 
             route.on("mouseover", (e) => route.setStyle({weight: 20}));
             route.on("mouseout", (e) => route.setStyle({weight: 5}));
-            route.bindPopup(`<p><strong>Route ${i+1}</strong><br>Length: ${Math.round(cost[0])}<br>Crossings: ${cost[1]}</p>`);
+            route.bindPopup(`<p><strong>Route ${i+1}</strong><br>Length: ${Math.round(cost[0])}<br>Elevation: ${cost[1]}</p>`);
             this.routes.push(route);
             i++;
         }

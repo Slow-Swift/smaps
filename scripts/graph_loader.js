@@ -13,6 +13,7 @@ export async function load_graph(max_edge_dst) {
     console.log(`Built graph with ${graph.order} nodes and ${graph.size} edges.`)
 
     await getNodeElevations(graph);
+    calculateEdgeSlopes(graph);
 
     return graph;
 }
@@ -68,51 +69,68 @@ function build_graph(elements, max_edge_dst) {
 }
 
 async function getNodeElevations(graph, max_edge_dst) {
-    const locations = []
-    const data = {locations: locations};
-    for (const node of graph.iter_vertices()) {
-        locations.push({
-            latitude: node[1].latlon[0],
-            longitude: node[1].latlon[1],
-        })
-    }
-
-    const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-    }
-
     const file_prefix = max_edge_dst ? max_edge_dst : "unlimited"
     const elevations = await fetch(`/data/sidewalk_elevations_${file_prefix}.json`).then(
         (data)=>data.json()
     ).catch(async e => {
         console.log("Fetching Node Elevations");
-            const response = await fetch(
-                "https://api.open-elevation.com/api/v1/lookup", 
-                {
-                    method: "POST",
-                    headers: headers,
-                    body: JSON.stringify(data)
-                }
-            ).then(
-                (data)=>data.json()
-            );
-            console.log("Fetched Node Elevations");
-            return response.results;
-        }
-    );
+        return fetchElevationsFromAPI(graph);
+    });
      
     window.elevationText = elevations;
 
     let i = 0; 
-    for (const node of graph.iter_vertices()) {
-        node[1].elevation = elevations[i].elevation;
-        if (node[1].tags == undefined) node[1].tags = {};
-        node[1].tags.ele = elevations[i].elevation;
+    for (const node of graph.iterVertices()) {
+        node.elevation = elevations[i];
+        if (node.tags == undefined) node.tags = {};
+        node.tags.ele = elevations[i];
         i++;
     }
 
     console.log("Loaded node elevations");
+}
+
+function calculateEdgeSlopes(graph) {
+    for (const [n1, n2] of graph.iterEdgeNodes()) {
+        const edgeData = graph.getEdge(n1, n2);
+        const ele1 = graph.getVertex(n1).elevation;
+        const ele2 = graph.getVertex(n2).elevation;
+        const slope = Math.abs(ele2 - ele1) / edgeData.length;
+        edgeData.slope = slope;
+        edgeData.elevation = Math.abs(ele2 - ele1);
+    }
+} 
+
+async function fetchElevationsFromAPI(graph) {
+    const CHUNK_LIMIT = 300;
+    const URL_BASE = "https://geogratis.gc.ca/services/elevation/cdem/profile?path=LINESTRING";
+    const resultElevations = [];
+
+    const nodes = graph.iterVertices();
+    for (let chunkStart=0; chunkStart < graph.order; chunkStart += CHUNK_LIMIT) {
+        console.log(`Fetching Elevations: (${Math.round((chunkStart / graph.order)*100)}%)`);
+        let url = `${URL_BASE}(`; 
+        let first = true;
+        for (const node of nodes.take(CHUNK_LIMIT)) {
+            url += `${first ? '' : ','}${node.latlon[1].toFixed(4)} ${node.latlon[0].toFixed(4)}`
+            first = false;
+        }
+        url += ')'; 
+
+        const elevations = await fetch(url).then(
+            (data)=>data.json()
+        );
+
+        for (const elevation of elevations) {
+            resultElevations.push(elevation.altitude);
+        }
+    }
+
+    if (resultElevations.length != graph.order) {
+        console.error("Length of recieved elevation data does not match graph order.");
+    }
+
+    return resultElevations;
 }
 
 function add_node_to_graph(graph, node) {
@@ -156,7 +174,7 @@ function add_way_to_graph(graph, way, max_dst) {
                 const distance = haversine(node_0.latlon, newNode.latlon);
                 const edge_data = {
                     way_id: way.id,
-                    tags: way.tags,
+                    tags: { ...way.tags },
                     length: distance,
                 };
                 graph.addEdge(node_0.id, newNode.id, edge_data);

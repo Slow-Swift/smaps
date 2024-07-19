@@ -29,7 +29,10 @@ export class GraphDataLayer {
                 continue;
             }
 
-            const [visible, color] = filter(edge.tags, this.filterInfo.edgeFilters);
+            let [visible, color] = filter(edge.tags, this.filterInfo.edgeFilters);
+            // const slopePercent = Math.floor(edge.slope * 255);
+            // color = `#${(slopePercent).toString(16).padStart(2, '0')}00${(255 - slopePercent).toString(16).padStart(2, '0')}`;
+
 
             if (!visible) {
                 edge.removeFrom(this.mapLayer);
@@ -46,10 +49,10 @@ export class GraphDataLayer {
             } 
 
             let [visible, color] = filter(node.tags, this.filterInfo.nodeFilters);
-            if (node.tags.ele) {
-                const heightPercent = Math.floor(node.tags.ele * 255 / 120);
-                // color = `#${(heightPercent).toString(16)}00${(255 - heightPercent).toString(16)}`;
-            } 
+            // if (node.tags.ele) {
+            //     const heightPercent = Math.floor(node.tags.ele * 255 / 140);
+            //     color = `#${(heightPercent).toString(16).padStart(2, '0')}00${(255 - heightPercent).toString(16).padStart(2, '0')}`;
+            // } 
 
  
             if (!visible) {
@@ -75,8 +78,12 @@ export class GraphDataLayer {
             const node2 = graph.getVertex(edge[1]);
             const line = L.polyline([node1.latlon, node2.latlon]).addTo(this.mapLayer);
             line.tags = edgeData.tags; 
+            line.slope = edgeData.slope;
             this.edges.push(line);
-            line.bindPopup(createMessage(`Way ${edgeData.way_id}`, edgeData.tags, [`Length ${edgeData.length}`]));
+            line.bindPopup(createMessage(
+                `Way ${edgeData.way_id}`, 
+                edgeData.tags, 
+                [`Length ${edgeData.length}`, `slope: ${edgeData.slope}`, `elevation: ${edgeData.elevation}`]));
         }
     
         for (let node of graph.iterVertices()) {

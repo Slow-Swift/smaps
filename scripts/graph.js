@@ -76,17 +76,9 @@ const BIT_OFFSET = 64n;
 
 function hash_edge(v1, v2) {
     return (v1 < v2) ? `${v1},${v2}` : `${v2},${v1}`;
-    let v1n = BigInt(v1);
-    let v2n = BigInt(v2);
-
-    // We combine both indices into a single big integer
-    // because if we use arrays as hash keys then the references
-    // will be different and the edge can never be retrieved from the Map
-    return (v1 < v2) ? (v1n << BIT_OFFSET) | v2n : (v2n << BIT_OFFSET) | v1n;
 }
 
 function unhash_edge(edge_hash) {
     const parts = edge_hash.split(',');
     return [Number(parts[0]), Number(parts[1])];
-    return [Number(edge_hash >> BIT_OFFSET), Number(edge_hash & ((1n << BIT_OFFSET) - 1n))];
 }
