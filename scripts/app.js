@@ -7,6 +7,7 @@ import { MapManager } from "./map_manager.js";
 import { GraphDataLayer } from "./graph_data_layer.js";
 import { GraphDataConfigurator } from "./graph_data_configurator.js";
 import { RouteFilter, RouteFilterFunction, RouteProfile } from "./route_profile.js";
+import { RouteProfileMenu } from "./route_profile_menu.js";
 
 window.onload = on_load;
 
@@ -18,46 +19,7 @@ async function on_load() {
     window.gdc = new GraphDataConfigurator(window.map);
     setup_callbacks();
     initialize_interactive_elements();
-
-    window.profile = new RouteProfile(
-        new RouteFilter(
-            RouteFilterFunction.ALL,
-            false,
-            [
-                new RouteFilter(
-                    RouteFilterFunction.EQ,
-                    true,
-                    "barrier",
-                    "kerb"
-                ),
-                new RouteFilter(
-                    RouteFilterFunction.EQ,
-                    true,
-                    "kerb",
-                    "raised",
-                )
-            ]
-        ),
-        new RouteFilter(
-            RouteFilterFunction.ANY,
-            true,
-            [
-                new RouteFilter(
-                    RouteFilterFunction.NEQ,
-                    true,
-                    "highway",
-                    "steps"
-                ),
-                new RouteFilter(
-                    RouteFilterFunction.EQ,
-                    true,
-                    "ramp",
-                    "yes",
-                )
-            ]
-            
-        )
-    );
+    window.routeProfileMenu = new RouteProfileMenu();
 }
 
 async function initialize_graph() {
@@ -98,13 +60,17 @@ function updateRouteDropdown(route_count) {
 
 function setup_callbacks() { 
     window.updateRouteDropdown = updateRouteDropdown;
-    document.getElementById('btn-calculate-routes').onclick = () => window.map.pathfind(window.profile);
+    document.getElementById('btn-calculate-routes').onclick = () => window.map.pathfind(window.profile); 
     document.getElementById("show-data-btn").onclick = on_show_data_pressed;
 
     window.show_filters = () => window.gdc.showFilterMenu();
     window.hide_filters = () => window.gdc.hideFilterMenu();
     window.show_save_menu = () => window.gdc.showSaveMenu();
     window.hide_save_menu = () => window.gdc.hideSaveMenu();
+    window.show_profile_menu = () => document.getElementById('profile-menu').style.display = 'block';
+    window.hideMenu = (btn) => { 
+        btn.closest('.floating-window').style.display = 'none' 
+    };
 }
 
 function initialize_interactive_elements() {

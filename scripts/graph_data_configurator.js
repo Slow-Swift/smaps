@@ -269,8 +269,8 @@ function createFilter() {
         <input class="tag-input" type="text" placeholder="Value">
         <input class="tag-input" type="color" placeholder="Color..." value="#3388ff">
     </div>
-    `
-
-    const children = template.content.children;
+    `  
+ 
+    const children = template.content.children; 
     return children[0];
 }

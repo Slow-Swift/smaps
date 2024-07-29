@@ -16,6 +16,8 @@
     <!-- <script type="module" src="scripts/graph_loader.js"></script>
     <script type="module" src="scripts/graph.js"></script> -->
     <script type="module" src="scripts/app.js"></script>
+    <script src="scripts/interactive_elements.js"></script>
+    <script src="scripts/custom_elements.js"></script>
 </head>
 <body class="light-theme">
     <div id="map"></div>
@@ -23,10 +25,11 @@
         <button id="btn-calculate-routes", class="btn">Calculate Routes</button>
         <div class="dropdown">
             <button class="btn">Select the routes to display</button>
-            <div id="routeDropdownContent" class="dropdown-content"></div>
+            <div id="routeDropdownContent" class="dropdown-content top"></div>
         </div>
         <button id="show-data-btn" class="checkbox-btn btn">Show Graph Data</button>
         <button class="checkbox-btn btn", onclick="window.show_filters()">Show Graph Filters</button>
+        <button class="checkbox-btn btn", onclick="show_profile_menu()">Select Profile</button>
     </div>
 
     
@@ -103,6 +106,45 @@
             <button class="btn" onclick="hide_save_menu()">Close</button>
             <button id="load-config-btn" class="btn">Load</button>
             <button id="delete-config-btn" class="btn">Delete</button>
+        </div>
+    </div>
+
+    <div id="profile-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Routing Profiles</h3>
+        </div>
+        <div id="profile-list" class="save-list">
+            <div class="save-item">
+                <h4>Save 1</h4>
+            </div>
+        </div>
+        <div>
+            <button class="btn" onclick=hideMenu(this)>Close</button>
+            <button id="create-profile-btn" class="btn">Create</button>
+            <button id="edit-profile-btn" class="btn">Edit</button>
+            <button id="delete-profile-btn" class="btn">Delete</button>
+        </div>
+    </div>
+
+    <div id="create-profile-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Routing Profiles</h3>
+        </div>
+        <div>
+            <p>Profile Name:</p>
+            <input id="profile-name-input" class="search-input" type="text">
+        </div>
+        <div>
+            <button class="collapsible">Node Filters</button>
+            <div id="node-profile-filters" class="collapsible-content"></div>
+        </div>
+        <div>
+            <button class="collapsible">Edge Filters</button>
+            <div id="edge-profile-filters" class="collapsible-content"></div>
+        </div>
+        <div>
+            <button id="close-create-profile-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
+            <button id="create-profile-done-btn" class="btn">Done</button>
         </div>
     </div>
 </body>

@@ -1,11 +1,17 @@
 export const RouteFilterFunction = {
-    ALL: 'ALL',
-    ANY: 'ANY',
-    NONE: 'NONE',
-    EQ: 'EQ',
-    NEQ: 'NEQ',
-    IN: 'IN',
-    NOT_IN: 'NOT_IN',
+    ALL: 'All',
+    ANY: 'Any',
+    NONE: 'None',
+    EQ: 'Equal',
+    NEQ: 'Not Equal',
+    IN: 'Has',
+    NOT_IN: 'Not Has',
+}
+
+function RffFromString(str) {
+    for (const rff in RouteFilterFunction) {
+        if (RouteFilterFunction[rff] == str) return rff;
+    }
 }
 
 export class RouteProfile {
@@ -22,6 +28,17 @@ export class RouteProfile {
     isEdgeAllowed(edge) {
         if (this.edgeFilter == null || this.edgeFilter == undefined) return true;
         return this.edgeFilter.isAllowed(edge.tags);
+    }
+
+    toJsonObject() {
+        return {
+            nodeFilter: this.nodeFilter.toJsonObject(),
+            edgeFilter: this.edgeFilter.toJsonObject(),
+        }
+    }
+
+    static fromJsonObject(json) {
+        return new RouteProfile(RouteFilter.fromJsonObject(json.nodeFilter), RouteFilter.fromJsonObject(json.edgeFilter));
     }
 }
 
@@ -49,6 +66,12 @@ export class RouteFilter {
         }
     }
 
+    get filterFunction() { return this.#filterFunction; }
+    get allow() { return this.#allow; }
+    get filters() { return this.#filters; }
+    get tag() { return this.#tag; }
+    get value() { return this.#value; }
+
     isAllowed(tags) {
         if (tags == null || tags == undefined) return true;
 
@@ -60,6 +83,41 @@ export class RouteFilter {
             case RouteFilterFunction.NEQ: return tags[this.#tag] != this.#value;
             case RouteFilterFunction.IN: return tags.hasOwnProperty(this.#tag);
             case RouteFilterFunction.NOT_IN: return !tags.hasOwnProperty(this.#tag);
+        }
+    }
+
+    static fromJsonObject(json) {
+        const subfilters = [];
+        for (const subfilter of json.filters) {
+            subfilters.push(RouteFilter.fromJsonObject(subfilter));
+        }
+
+        const filterFunction = RouteFilterFunction[json.filterFunction];
+        switch (filterFunction) {
+            case RouteFilterFunction.ANY:
+            case RouteFilterFunction.ALL:
+            case RouteFilterFunction.NONE: 
+                return new RouteFilter(filterFunction, json.allow, subfilters, json.value);
+            default:
+                return new RouteFilter(filterFunction, json.allow, json.tag, json.value);
+        }
+        
+    }
+
+    toJsonObject() {
+        const filters = [];
+        if (this.#filters) {
+            for (const filter of this.#filters) {
+                filters.push(filter.toJsonObject())
+            }
+        }
+
+        return {
+            filterFunction: RffFromString(this.#filterFunction),
+            allow: this.#allow,
+            filters: filters,
+            tag: this.#tag,
+            value: this.#value,
         }
     }
 
