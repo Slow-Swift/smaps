@@ -1,1 +1,5 @@
 .fiveserverrc.json
+venv/
+.vscode/
+.env
+secrets.*

@@ -79,7 +79,8 @@ export class GraphDataConfigurator {
             this.selectedNodeFilter = newlySelected;
             newlySelected?.classList.add('selected');
         }
-    
+        filter.addEventListener('contextmenu', (e) => { e.preventDefault(); switchFilterMode(filter); }, false);
+
         this.nodeFilters.appendChild(filter);
         return filter;
     }
@@ -94,7 +95,8 @@ export class GraphDataConfigurator {
             this.selectedEdgeFilter = newlySelected;
             newlySelected?.classList.add('selected');
         }
-    
+        filter.addEventListener('contextmenu', (e) => { e.preventDefault(); switchFilterMode(filter); }, false);
+
         this.edgeFilters.appendChild(filter);
         return filter;
     }
@@ -150,19 +152,33 @@ export class GraphDataConfigurator {
         this.nodeFilters.replaceChildren();
         for (const nodeFilter of configuration.nodeFilters) {
             const nodeFilterElement = this.#addNodeFilter();
-            nodeFilterElement.children[0].children[0].checked = nodeFilter.visible;
-            nodeFilterElement.children[1].value = nodeFilter.tag;
-            nodeFilterElement.children[2].value = nodeFilter.value;
-            nodeFilterElement.children[3].value = nodeFilter.color;
+            nodeFilterElement.checkbox.checked = nodeFilter.visible ?? true;
+            nodeFilterElement.tagInput.value = nodeFilter.tag ?? "Any";
+            nodeFilterElement.valueInput.value = nodeFilter.value ?? "Any";
+            nodeFilterElement.range1Input.value = nodeFilter.rangeMin ?? 0;
+            nodeFilterElement.range2Input.value = nodeFilter.rangeMax ?? 0;
+            nodeFilterElement.color1Input.value = nodeFilter.color ?? "#3388ff";
+            nodeFilterElement.color2Input.value = nodeFilter.color2 ?? "#3388ff";
+
+            if (nodeFilter.gradient ?? false) {
+                switchFilterMode(nodeFilterElement);
+            }
         }
 
         this.edgeFilters.replaceChildren();
         for (const edgeFilter of configuration.edgeFilters) {
             const edgeFilterElement = this.#addEdgeFilter();
-            edgeFilterElement.children[0].children[0].checked = edgeFilter.visible;
-            edgeFilterElement.children[1].value = edgeFilter.tag;
-            edgeFilterElement.children[2].value = edgeFilter.value;
-            edgeFilterElement.children[3].value = edgeFilter.color;
+            edgeFilterElement.checkbox.checked = edgeFilter.visible ?? true;
+            edgeFilterElement.tagInput.value = edgeFilter.tag ?? "Any";
+            edgeFilterElement.valueInput.value = edgeFilter.value ?? "Any";
+            edgeFilterElement.range1Input.value = edgeFilter.rangeMin ?? 0;
+            edgeFilterElement.range2Input.value = edgeFilter.rangeMax ?? 0;
+            edgeFilterElement.color1Input.value = edgeFilter.color ?? "#3388ff";
+            edgeFilterElement.color2Input.value = edgeFilter.color2 ?? "#3388ff";
+
+            if (edgeFilter.gradient ?? false) {
+                switchFilterMode(edgeFilterElement);
+            }
         }
 
         document.getElementById('node-size-input').value = configuration.nodeSize;
@@ -224,10 +240,14 @@ function getFiltersFromDocElement(container) {
     const filters = [];
     for (const filterElement of container.children) {
         const filterData = {
-            visible:    filterElement.children[0].children[0].checked,
-            tag:        filterElement.children[1].value.trim(),
-            value:      filterElement.children[2].value.trim(),
-            color:      filterElement.children[3].value.trim(),
+            gradient: filterElement.mode == "gradient",
+            visible:    filterElement.checkbox.checked,
+            tag:        filterElement.tagInput.value.trim(),
+            value:      filterElement.valueInput.value.trim(),
+            rangeMin:   Number(filterElement.range1Input.value),
+            rangeMax:   Number(filterElement.range2Input.value),
+            color:      filterElement.color1Input.value.trim(),
+            color2:      filterElement.color2Input.value.trim(),
         };
         filters.push(filterData);
     }
@@ -259,18 +279,74 @@ function saveConfigurations(configurations) {
 }
 
 function createFilter() {
-    const template = document.createElement('template');
-    template.innerHTML = `
-    <div class="tag-filter">
-        <div style="display: inline-block;">
-            <input type="checkbox" class="tag-cb" checked>
-        </div>
-        <input class="tag-input" type="text" placeholder="Tag">
-        <input class="tag-input" type="text" placeholder="Value">
-        <input class="tag-input" type="color" placeholder="Color..." value="#3388ff">
-    </div>
-    `  
+    let filter = document.createElement('div');
+    let cbWrapper = document.createElement('div');
+    let checkbox = document.createElement('input');
+    let tagInput = document.createElement('input');
+    let valueInput = document.createElement('input');
+    let range1Input = document.createElement('input');
+    let range2Input = document.createElement('input');
+    let color1Input = document.createElement('input');
+    let color2Input = document.createElement('input');
+
+    filter.classList.add('tag-filter');
+    cbWrapper.style.display = "inline-block";
+    checkbox.classList.add("tag-cb");
+
+    checkbox.type = "checkbox";
+    tagInput.type = "text";
+    valueInput.type = "text";
+    range1Input.type = "text";
+    range2Input.type = "text";
+    color1Input.type = "color";
+    color2Input.type = "color";
+
+    tagInput.classList.add("tag-input");
+    valueInput.classList.add("tag-input");
+    range1Input.classList.add("tag-input", "small-input");
+    range2Input.classList.add("tag-input", "small-input");
+    color1Input.classList.add("tag-input");
+    color2Input.classList.add("tag-input");
+
+    tagInput.placeholder = "Tag";
+    valueInput.placeholder = "Value";
+    range1Input.placeholder = "Min";
+    range2Input.placeholder = "Max";
+    color1Input.placeholder = "Color";
+    color2Input.placeholder = "Color";
+    color1Input.value = "#3388ff";
+    color2Input.value = "#3388ff";
+
+    filter.appendChild(cbWrapper);
+    filter.appendChild(tagInput);
+    filter.appendChild(valueInput);
+    filter.appendChild(color1Input);
+    cbWrapper.appendChild(checkbox);
+
+    filter.checkbox = checkbox;
+    filter.tagInput = tagInput;
+    filter.valueInput = valueInput;
+    filter.range1Input = range1Input;
+    filter.range2Input = range2Input;
+    filter.color1Input = color1Input;
+    filter.color2Input = color2Input;
+    filter.mode = "match";
  
-    const children = template.content.children; 
-    return children[0];
+    return filter;
+}
+
+function switchFilterMode(filter) {
+    filter.mode = filter.mode == "match" ? "gradient" : "match";
+
+    if (filter.mode == "gradient") {
+        filter.valueInput?.parentElement?.removeChild(filter.valueInput);
+        filter.insertBefore(filter.range1Input, filter.color1Input);
+        filter.insertBefore(filter.range2Input, filter.color1Input);
+        filter.appendChild(filter.color2Input);
+    } else {
+        filter.range1Input?.parentElement?.removeChild(filter.range1Input);
+        filter.range2Input?.parentElement?.removeChild(filter.range2Input);
+        filter.color2Input?.parentElement?.removeChild(filter.color2Input);
+        filter.insertBefore(filter.valueInput, filter.color1Input);
+    }
 }

@@ -128,11 +128,71 @@
 
     <div id="create-profile-menu" class="floating-window draggable">
         <div class="draggable-header">
-            <h3>Routing Profiles</h3>
+            <h3>Routing Profile</h3>
         </div>
         <div>
             <p>Profile Name:</p>
             <input id="profile-name-input" class="search-input" type="text">
+        </div>
+        <div>
+            <p>Slope</p>
+            <input type="text" id="slope-multiplier-input" class="rounded-input">
+            <input type="text" id="max-slope-input" class="rounded-input">
+        </div>
+        <div>
+            <p>Crossing</p>
+            <input type="text" id="crossing-multiplier-input" class="rounded-input">
+            <div class="toggle-btn">Configure</div>
+        </div>
+        <div>
+            <p>Path Type</p>
+            <div class="toggle-btn">Configure</div>
+        </div>
+        <div>
+            <button id="close-create-profile-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
+            <button id="create-profile-done-btn" class="btn">Done</button>
+        </div>
+    </div>
+
+    <div id="crossing-score-menu" class="floating-window draggable" style="display: block;">
+        <div class="draggable-header">
+            <h3>Crossing Score Menu</h3>
+        </div>
+        <div>
+            <div class="crossing-feature">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Has Ramps</p>
+                <input type="range">
+            </div>
+            <div class="crossing-feature">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Is Marked</p>
+                <input type="range">
+            </div>
+            <div class="crossing-feature">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Has Tactile Paving</p>
+                <input type="range">
+            </div>
+            <div class="crossing-feature">
+                <input type="checkbox" name="Test" class="checkbox-btn">
+                <p>Has Signals</p>
+                <input type="range">
+            </div>
+            <div class="crossing-feature">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Has Ramps</p>
+                <input type="range">
+            </div>
+        </div>
+        <div>
+            <button class="btn" onclick=hideMenu(this)>Done</button>
+        </div>
+    </div>
+
+    <div id="advanced-profile-filter-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Routing Profiles</h3>
         </div>
         <div>
             <button class="collapsible">Node Filters</button>
@@ -143,9 +203,9 @@
             <div id="edge-profile-filters" class="collapsible-content"></div>
         </div>
         <div>
-            <button id="close-create-profile-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
-            <button id="create-profile-done-btn" class="btn">Done</button>
+            <button id="close-advanced-filter-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
         </div>
     </div>
+    
 </body>
 </html>

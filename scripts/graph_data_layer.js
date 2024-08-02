@@ -138,7 +138,16 @@ function filter(tags, filters) {
         if (filter.tag.length == 0) continue;
         
         if (doesFilterMatch(filter, tags)) {
-            const filterColor = filter.color.length == 0 ? "#00f" : filter.color;
+            let filterColor;
+            if (filter.gradient) {
+                let value = tags[filter.tag];
+                let percent = (value - filter.rangeMin) / (filter.rangeMax - filter.rangeMin);
+                let startColor = filter.color.length == 0 ? "#0000FF" : filter.color;
+                let endColor = filter.color.length == 0 ? "#0000FF" : filter.color2;
+                filterColor = lerpColor(startColor, endColor, percent);
+            } else {
+                filterColor = filter.color.length == 0 ? "#00f" : filter.color;
+            }    
             return [filter.visible, filterColor];
         }
     }
@@ -148,11 +157,48 @@ function filter(tags, filters) {
 
 function doesFilterMatch(filter, tags) {
     const isTagEmpty = (filter.tag.length == 0) || (filter.tag.toLowerCase() == "any");
+    if (isTagEmpty) return true;
     
-    if (!isTagEmpty && (tags == undefined || tags[filter.tag] == undefined)) return false;
+    if (tags == undefined || tags[filter.tag] == undefined) return false;
 
-    const isValueEmpty = (filter.value.length == 0) || (filter.value.toLowerCase() == "any");
-    if (isValueEmpty) return true;
+    
+    if (filter.gradient) {
+        if (filter.rangeMin == NaN || filter.rangeMax == NaN) return false;
+        
+        return tags[filter.tag] >= filter.rangeMin && tags[filter.tag] < filter.rangeMax;
+    } else {
+        const isValueEmpty = (filter.value.length == 0) || (filter.value.toLowerCase() == "any");
+        if (isValueEmpty) return true;
 
-    return tags[filter.tag] == filter.value;
+        return tags[filter.tag] == filter.value;
+    }
+
 }
+
+function lerpColor(startColor, endColor, percent) {
+    // Convert hex to RGB
+    const startRGB = {
+      r: parseInt(startColor.slice(1, 3), 16),
+      g: parseInt(startColor.slice(3, 5), 16),
+      b: parseInt(startColor.slice(5, 7), 16)
+    };
+    
+    const endRGB = {
+      r: parseInt(endColor.slice(1, 3), 16),
+      g: parseInt(endColor.slice(3, 5), 16),
+      b: parseInt(endColor.slice(5, 7), 16)
+    };
+  
+    // Interpolate each channel
+    const lerpChannel = (start, end, percent) => Math.round(start + (end - start) * percent);
+  
+    const r = lerpChannel(startRGB.r, endRGB.r, percent);
+    const g = lerpChannel(startRGB.g, endRGB.g, percent);
+    const b = lerpChannel(startRGB.b, endRGB.b, percent);
+  
+    // Convert RGB back to hex
+    const toHex = c => c.toString(16).padStart(2, '0');
+    
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+  

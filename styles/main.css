@@ -280,6 +280,10 @@ body {
     background-color: #ffffff;
 }
 
+.tag-input {
+    margin: 0 3px;
+}
+
 .tag-filter.selected {
     background-color: #f1f1f1;
 }
@@ -292,6 +296,10 @@ body {
     height: 30px;
     padding-left: 10px;
     width: 150px;
+}
+
+.tag-filter input[type="text"].small-input {
+    width: 75px;
 }
 
 .tag-filter input[type="color" i] {

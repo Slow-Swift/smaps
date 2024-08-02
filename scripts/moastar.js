@@ -7,15 +7,16 @@ export class MOA_Star {
     /**
      * 
      * @param {Graph} graph The graph to pathfind on
-     * @param {Function} heuristic Function to get heuritic for each node
+     * @param {Function} getHeuristic Function to get heuritic for each node
+     * @param {Function} getWeight The function to get the weight for each node
      * @param {Number} dimensions The number of objectives to optimize on
-     * @param {string} weightLabel The name of the weight in the node data
      */
-    constructor(graph, heuristic, dimensions, weightLabel='w') {
+    constructor(graph, getHeuristic, getWeight, addCosts, dimensions) {
         this.graph = graph;
-        this.heuristic = heuristic;
+        this.getHeuristic = getHeuristic;
         this.dimensions = dimensions;
-        this.weightLabel = weightLabel;
+        this.getWeight = getWeight;
+        this.addCosts = addCosts;
         this.openLabels = new Heap((a,b) => Vector.compareLex(a[2], b[2]));
         this.costs = new Array();
         this.costs_t = new Array();
@@ -98,7 +99,6 @@ export class MOA_Star {
                     break;
                 }
             }
-
         }
 
         return paths;
@@ -110,8 +110,8 @@ export class MOA_Star {
         for (let neighbor of this.graph.iterNeighbors(node)) {
             if (!this.#isEdgeTraversible(node, neighbor)) continue;
             const edgeWeight = this.#getEdgeWeight(node, neighbor);
-            const pathCost = cost.add(edgeWeight);
-            const solutionEstimate = pathCost.add(this.heuristic(neighbor));
+            const pathCost = this.addCosts(cost, edgeWeight);
+            const solutionEstimate = this.addCosts(pathCost, this.getHeuristic(neighbor));
 
             if (this.#costsDominate(solutionEstimate)) continue;
 
@@ -134,11 +134,11 @@ export class MOA_Star {
     }
 
     #getEdgeWeight(node1, node2) {
-        return this.graph.getEdge(node1, node2)[this.weightLabel];
+        return this.getWeight(node1, node2);
     }
 
     #setup_start(node) {
-        this.openLabels.insert([node, Vector.zeros(this.dimensions), this.heuristic(node)])
+        this.openLabels.insert([node, Vector.zeros(this.dimensions), this.getHeuristic(node)])
         this.nodeData.set(node, createNodeData(Vector.zeros(this.dimensions)));
     }
 
@@ -147,10 +147,11 @@ export class MOA_Star {
     }
 
     #costsDominate(cost) {
-        for (let solution_cost in self.costs_t) {
+        for (let solution_cost of this.costs_t) {
             let comparison = Vector.compareTruncatedDom(solution_cost, cost);
             if (comparison == LESS) return true;
-            if (comparison == EQUAL && solution_cost[0] < cost[0]) return true;
+            // if (comparison == EQUAL && solution_cost[0] < cost[0]) return true;
+            if (Vector.equals(solution_cost, cost)) return true;
         }
         return false;
     }
@@ -193,7 +194,7 @@ export class MOA_Star {
         }
 
         nodeData.open.push(cost);
-        this.openLabels.insert([node, cost, cost.add(this.heuristic(node))])
+        this.openLabels.insert([node, cost, cost.add(this.getHeuristic(node))])
         return true;
     }
 

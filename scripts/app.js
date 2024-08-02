@@ -1,12 +1,11 @@
 'use strict';
 
-import { load_graph } from "./graph_loader.js";
+import { haversine, load_graph } from "./graph_loader.js";
 import { MOA_Star } from "./moastar.js";
 import { Vector } from "./vector.js";
 import { MapManager } from "./map_manager.js";
 import { GraphDataLayer } from "./graph_data_layer.js";
 import { GraphDataConfigurator } from "./graph_data_configurator.js";
-import { RouteFilter, RouteFilterFunction, RouteProfile } from "./route_profile.js";
 import { RouteProfileMenu } from "./route_profile_menu.js";
 
 window.onload = on_load;
@@ -30,7 +29,35 @@ async function initialize_graph() {
         let weight = new Vector(length, crossing);
         edge_data.weight = weight;
     }
-    window.namoa_star = new MOA_Star(graph, (v) => Vector.zeros(2), 2, 'weight');
+
+    window.namoa_star = new MOA_Star(
+        window.graph, 
+        (v) => {
+            v = graph.getVertex(v);
+            return new Vector(
+                haversine(v.latlon, window.targetNode.latlon),
+                Math.abs(v.elevation - window.targetNode.elevation),
+                0,
+            );
+        },
+        (from, to) => {
+            let edge = graph.getEdge(from, to);
+            let weight = new Vector(
+                edge.length,
+                edge.elevation,
+                edge.tags.slope,
+            );
+            return weight;
+        },
+        (cost1, cost2) => {
+            return new Vector(
+                cost1[0] + cost2[0],
+                cost1[1] + cost2[1],
+                Math.max(cost1[2], cost2[2]),
+            );
+        },
+        3,
+    );
 }
 
 function on_show_data_pressed() {

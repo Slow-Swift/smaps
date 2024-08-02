@@ -12,7 +12,7 @@ export async function load_graph(max_edge_dst) {
     let graph = build_graph(elements, max_edge_dst);
     console.log(`Built graph with ${graph.order} nodes and ${graph.size} edges.`)
 
-    await getNodeElevations(graph);
+    await getNodeElevations(graph, max_edge_dst);
     calculateEdgeSlopes(graph);
 
     return graph;
@@ -98,39 +98,8 @@ function calculateEdgeSlopes(graph) {
         const slope = Math.abs(ele2 - ele1) / edgeData.length;
         edgeData.slope = slope;
         edgeData.elevation = Math.abs(ele2 - ele1);
+        edgeData.tags.slope = slope;
     }
-} 
-
-async function fetchElevationsFromAPI(graph) {
-    const CHUNK_LIMIT = 300;
-    const URL_BASE = "https://geogratis.gc.ca/services/elevation/cdem/profile?path=LINESTRING";
-    const resultElevations = [];
-
-    const nodes = graph.iterVertices();
-    for (let chunkStart=0; chunkStart < graph.order; chunkStart += CHUNK_LIMIT) {
-        console.log(`Fetching Elevations: (${Math.round((chunkStart / graph.order)*100)}%)`);
-        let url = `${URL_BASE}(`; 
-        let first = true;
-        for (const node of nodes.take(CHUNK_LIMIT)) {
-            url += `${first ? '' : ','}${node.latlon[1].toFixed(4)} ${node.latlon[0].toFixed(4)}`
-            first = false;
-        }
-        url += ')'; 
-
-        const elevations = await fetch(url).then(
-            (data)=>data.json()
-        );
-
-        for (const elevation of elevations) {
-            resultElevations.push(elevation.altitude);
-        }
-    }
-
-    if (resultElevations.length != graph.order) {
-        console.error("Length of recieved elevation data does not match graph order.");
-    }
-
-    return resultElevations;
 }
 
 function add_node_to_graph(graph, node) {
@@ -145,9 +114,6 @@ function add_node_to_graph(graph, node) {
 
 function add_way_to_graph(graph, way, max_dst) {
     const nodes = way.nodes;
-    if (way.id == 1077846306) {
-        console.log("hey");
-    }
 
     // Add all the edges that make up the way
     for (let i = 0, j = 1; j < nodes.length; i++, j++) {
@@ -186,7 +152,7 @@ function add_way_to_graph(graph, way, max_dst) {
         // Add edge to the graph
         const edge_data = {
             way_id: way.id,
-            tags: way.tags,
+            tags: { ...way.tags },
             length: distance,
         };
         graph.addEdge(node_0.id, node_1.id, edge_data);
@@ -200,7 +166,7 @@ function add_way_to_graph(graph, way, max_dst) {
  * @param {number[]} latlonB [lat, lon] pointB.
  * @returns {number} The distance between point A and B.
  */
-function haversine([lat1, lon1], [lat2, lon2]) {
+export function haversine([lat1, lon1], [lat2, lon2]) {
     const EARTH_RADIUS_METERS = 6371e3;
     const lat1Radian = lat1 * Math.PI / 180;
     const lat2Radian = lat2 * Math.PI / 180;
