@@ -130,59 +130,101 @@
         <div class="draggable-header">
             <h3>Routing Profile</h3>
         </div>
-        <div>
-            <p>Profile Name:</p>
+        <div class="input-wrapper">
+            <label>Profile Name</label>
             <input id="profile-name-input" class="search-input" type="text">
         </div>
         <div>
             <p>Slope</p>
             <input type="text" id="slope-multiplier-input" class="rounded-input">
             <input type="text" id="max-slope-input" class="rounded-input">
+            <input type="text" id="ignore-slope-length-input" class="rounded-input">
         </div>
         <div>
             <p>Crossing</p>
-            <input type="text" id="crossing-multiplier-input" class="rounded-input">
-            <div class="toggle-btn">Configure</div>
+            <div id="open-crossing-menu", class="toggle-btn">Configure</div>
         </div>
         <div>
             <p>Path Type</p>
-            <div class="toggle-btn">Configure</div>
+            <div id="open-path-type-menu" class="toggle-btn">Configure</div>
         </div>
+        <div id="open-advanced-filter-menu" class="toggle-btn">Advanced Filters</div>
         <div>
             <button id="close-create-profile-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
             <button id="create-profile-done-btn" class="btn">Done</button>
         </div>
+        
     </div>
 
-    <div id="crossing-score-menu" class="floating-window draggable" style="display: block;">
+    <div id="crossing-score-menu" class="floating-window draggable">
         <div class="draggable-header">
             <h3>Crossing Score Menu</h3>
         </div>
         <div>
-            <div class="crossing-feature">
+            <div id="crossing-base-input" class="crossing-feature">
+                <p>Base</p>
+                <input type="text" class="rounded-input">
+            </div>
+            <div id="crossing-ramp-input" class="crossing-feature">
                 <input type="checkbox" name="" class="checkbox-btn">
                 <p>Has Ramps</p>
-                <input type="range">
+                <input type="text" class="rounded-input">
             </div>
-            <div class="crossing-feature">
+            <div id="crossing-marked-input" class="crossing-feature">
                 <input type="checkbox" name="" class="checkbox-btn">
                 <p>Is Marked</p>
-                <input type="range">
+                <input type="text" class="rounded-input">
             </div>
-            <div class="crossing-feature">
+            <div id="crossing-tactile-input" class="crossing-feature">
                 <input type="checkbox" name="" class="checkbox-btn">
                 <p>Has Tactile Paving</p>
-                <input type="range">
+                <input type="text" class="rounded-input">
             </div>
-            <div class="crossing-feature">
+            <div id="crossing-signal-input" class="crossing-feature">
                 <input type="checkbox" name="Test" class="checkbox-btn">
                 <p>Has Signals</p>
-                <input type="range">
+                <input type="text" class="rounded-input">
             </div>
-            <div class="crossing-feature">
+            <div id="crossing-sound-input" class="crossing-feature">
                 <input type="checkbox" name="" class="checkbox-btn">
-                <p>Has Ramps</p>
-                <input type="range">
+                <p>Has Sounds</p>
+                <input type="text" class="rounded-input">
+            </div>
+        </div>
+        <div>
+            <button class="btn" onclick=hideMenu(this)>Done</button>
+        </div>
+    </div>
+
+    <div id="path-type-menu" class="floating-window draggable">
+        <div class="draggable-header">
+            <h3>Path Type Menu</h3>
+        </div>
+        <div id="path-types">
+            <div class="path-type">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Stairs</p>
+                <input type="text" class="rounded-input">
+            </div>
+            <div class="path-type">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Paved</p>
+                <input type="text" class="rounded-input">
+            </div>
+            <div class="path-type">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Unpaved</p>
+                <input type="text" class="rounded-input">
+            </div>
+            <div class="path-type">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Cobblestone</p>
+                <input type="text" class="rounded-input">
+            </div>
+            <div class="path-type">
+                <input type="checkbox" name="" class="checkbox-btn">
+                <p>Dirt</p>
+                <input type="text" class="rounded-input">
             </div>
         </div>
         <div>

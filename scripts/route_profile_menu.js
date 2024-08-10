@@ -18,29 +18,41 @@ export class RouteProfileMenu {
         this.#node_filters_element = document.getElementById('node-profile-filters');
         this.#edge_filters_element = document.getElementById('edge-profile-filters');
         this.#profileListElement = document.getElementById('profile-list');
-        document.getElementById('create-profile-btn').onclick = this.showCreateMenu.bind(this);
-        document.getElementById('create-profile-done-btn').onclick = this.#onDoneCreatePressed.bind(this);
-        document.getElementById('edit-profile-btn').onclick = this.#onEditPressed.bind(this);
-        document.getElementById('delete-profile-btn').onclick = this.#onDeletePressed.bind(this);
         this.#initializeProfileList();
 
-        const createCloseBtn = document.getElementById("close-create-profile-btn");
-        createCloseBtn.addEventListener('click', () => this.#editingIndex = null);
+        // Setup callbacks
+        document.getElementById('create-profile-btn').addEventListener('click', this.showCreateMenu.bind(this));
+        document.getElementById('create-profile-done-btn').addEventListener('click', this.#onDoneCreatePressed.bind(this));
+        document.getElementById("close-create-profile-btn").addEventListener('click', () => this.#editingIndex = null);
+        document.getElementById('edit-profile-btn').addEventListener('click', this.#onEditPressed.bind(this));
+        document.getElementById('delete-profile-btn').addEventListener('click', this.#onDeletePressed.bind(this));
+        document.getElementById('open-crossing-menu').addEventListener('click', this.#openCrossingMenu.bind(this));
+        document.getElementById('open-path-type-menu').addEventListener('click', this.#openPathTypeMenu.bind(this));
+        document.getElementById('open-advanced-filter-menu').addEventListener('click', this.#openAdvancedFilterMenu.bind(this));
     }
 
     showCreateMenu() {
-        document.getElementById('profile-name-input').value = '';
+        this.#setProfileUI('', new RouteProfile(
+            { max: NaN, multiplier: 2 },
+            { base: 1, ramp: { weight: 1 }, marked: { weight: 1 }, tactile: { weight: 0 }, signal: { weight: 1 }, sound: { weight: 0} },
+            { },
+            new RouteFilter(RouteFilterFunction.ALL, true, "", ""),
+            new RouteFilter(RouteFilterFunction.ALL, true, "", ""),
+        ))
+
         this.#create_menu.style.display = 'block';
-        this.#node_filters = new FilterVisual();
-        this.#edge_filters = new FilterVisual();
-        this.#node_filters_element.replaceChildren(this.#node_filters.element);
-        this.#edge_filters_element.replaceChildren(this.#edge_filters.element);
     }
 
-    getRouteProfile() {
-        const nodeFilter = this.#node_filters.getRouteFilter();
-        const edgeFilter = this.#edge_filters.getRouteFilter();
-        return new RouteProfile(nodeFilter, edgeFilter);
+    #openCrossingMenu() {
+        document.getElementById("crossing-score-menu").style.display = 'block';
+    }
+
+    #openPathTypeMenu() {
+        document.getElementById("path-type-menu").style.display = 'block';
+    }
+
+    #openAdvancedFilterMenu() {
+        document.getElementById("advanced-profile-filter-menu").style.display = 'block';
     }
 
     #initializeProfileList() {
@@ -57,6 +69,7 @@ export class RouteProfileMenu {
             this.#selectedProfileIndex = profiles.length - 1;
         }
         window.profile = this.#profiles[this.#selectedProfileIndex][1];
+        window.applyProfile(window.profile)
 
         this.selectedSaveItem = null;
         for (let i=profiles.length - 1; i >= 0; i--) {
@@ -84,26 +97,26 @@ export class RouteProfileMenu {
         this.selectedSaveItem = newlySelected;
         this.#selectedProfileIndex = this.selectedSaveItem.index;
         window.profile = this.#profiles[this.#selectedProfileIndex][1];
+        window.applyProfile(window.profile);
         localStorage.setItem('selectedProfileIndex', this.#selectedProfileIndex);
         newlySelected?.classList.add('selected'); 
     }
 
     #onDoneCreatePressed() {
-        this.#create_menu.style.display = 'none';
-
         const name = document.getElementById('profile-name-input').value;
         if (name.trim().length == 0) return;
-        const profile = this.getRouteProfile();
-
+        const profile = this.#getRouteProfile();
+        
         if (this.#editingIndex != null) {
             this.#profiles[this.#editingIndex] = [name, profile];
             this.#editingIndex = null;
         } else {
             this.#profiles.push([name, profile]);
         }
-
+        
         saveProfiles(this.#profiles);
         this.#initializeProfileList();
+        this.#create_menu.style.display = 'none';
     }
 
     #onDeletePressed() {
@@ -122,13 +135,110 @@ export class RouteProfileMenu {
         this.#editingIndex = this.selectedSaveItem.index;
 
         const [profileName, profile] = this.#profiles[this.selectedSaveItem.index];
+        this.#setProfileUI(profileName, profile);
 
-        document.getElementById('profile-name-input').value = profileName;
         this.#create_menu.style.display = 'block';
         this.#node_filters = FilterVisual.createFromRouteFilter(profile.nodeFilter);
         this.#edge_filters = FilterVisual.createFromRouteFilter(profile.edgeFilter);
         this.#node_filters_element.replaceChildren(this.#node_filters.element);
         this.#edge_filters_element.replaceChildren(this.#edge_filters.element);
+    }
+
+    #getRouteProfile() {
+        const slopeMultiplier = document.getElementById('slope-multiplier-input').value;
+        const maxSlopeInput = document.getElementById('max-slope-input');
+        const ignoreSlopeLength = document.getElementById('ignore-slope-length-input').value;
+        const maxSlope = maxSlopeInput.value.trim().length == 0 ? NaN : Number(maxSlopeInput.value);
+        const crossingProfile = this.#getCrossingProfile();
+        const pathProfile = this.#getPathTypeProfile();
+        const nodeFilter = this.#node_filters.getRouteFilter();
+        const edgeFilter = this.#edge_filters.getRouteFilter();
+        return new RouteProfile(
+            {
+                max: maxSlope,
+                multiplier: slopeMultiplier,
+                ignoreSlopeLength: ignoreSlopeLength,
+            },
+            crossingProfile,
+            pathProfile,
+            nodeFilter, 
+            edgeFilter,
+        );
+    }
+
+    #setProfileUI(profileName, profile) {
+        document.getElementById('profile-name-input').value = profileName;
+        document.getElementById('slope-multiplier-input').value = profile.slopeProfile.multiplier;
+        document.getElementById('max-slope-input').value = !isNaN(profile.slopeProfile.max) ? profile.slopeProfile.max : '';
+        document.getElementById('ignore-slope-length-input').value = !isNaN(profile.slopeProfile.ignoreSlopeLength) ? profile.slopeProfile.ignoreSlopeLength : '';
+
+        this.#setCrossingProfile(profile.crossingProfile); 
+        this.#setPathTypeProfile(profile.pathTypeProfile);
+
+        this.#create_menu.style.display = 'block';
+        this.#node_filters = new FilterVisual();
+        this.#edge_filters = new FilterVisual();
+        this.#node_filters_element.replaceChildren(this.#node_filters.element);
+        this.#edge_filters_element.replaceChildren(this.#edge_filters.element);
+    }
+
+    #getCrossingProfile() {
+        const baseInput = document.getElementById("crossing-base-input");
+        const rampInput = document.getElementById("crossing-ramp-input");
+        const markedInput = document.getElementById("crossing-marked-input");
+        const tactileInput = document.getElementById("crossing-tactile-input");
+        const signalInput = document.getElementById("crossing-signal-input");
+        const soundInput = document.getElementById("crossing-sound-input");
+
+        return {
+            base: Number(baseInput.lastElementChild.value),
+            ramp: { required: rampInput.firstElementChild.checked, weight: Number(rampInput.lastElementChild.value) },
+            marked: { required: markedInput.firstElementChild.checked, weight: Number(markedInput.lastElementChild.value) },
+            tactile: { required: tactileInput.firstElementChild.checked, weight: Number(tactileInput.lastElementChild.value) },
+            signal: { required: signalInput.firstElementChild.checked, weight: Number(signalInput.lastElementChild.value) },
+            sound: { required: soundInput.firstElementChild.checked, weight: Number(soundInput.lastElementChild.value) },
+        }
+    }
+
+    #setCrossingProfile(profile) {
+        const baseInput = document.getElementById("crossing-base-input");
+        const rampInput = document.getElementById("crossing-ramp-input");
+        const markedInput = document.getElementById("crossing-marked-input");
+        const tactileInput = document.getElementById("crossing-tactile-input");
+        const signalInput = document.getElementById("crossing-signal-input");
+        const soundInput = document.getElementById("crossing-sound-input");
+
+        baseInput.lastElementChild.value = profile.base ?? 0;
+        rampInput.firstElementChild.checked = profile.ramp?.required ?? false;
+        rampInput.lastElementChild.value = profile.ramp?.weight ?? 0;
+        markedInput.firstElementChild.checked = profile.marked?.required ?? false;
+        markedInput.lastElementChild.value = profile.marked?.weight ?? 0;
+        tactileInput.firstElementChild.checked = profile.tactile?.required ?? false;
+        tactileInput.lastElementChild.value = profile.tactile?.weight ?? 0;
+        signalInput.firstElementChild.checked = profile.signal?.required ?? false;
+        signalInput.lastElementChild.value = profile.signal?.weight ?? 0;
+        soundInput.firstElementChild.checked = profile.sound?.required ?? false;
+        soundInput.lastElementChild.value = profile.sound?.weight ?? 0;
+    }
+
+    #getPathTypeProfile() {
+        const pathProfile = {};
+        const pathTypeParent = document.getElementById("path-types");
+        for (const pathTypeInput of pathTypeParent.querySelectorAll(".path-type")) {
+            const type = pathTypeInput.querySelector('p').innerText;
+            pathProfile[type.toLowerCase()] = { passable: !pathTypeInput.firstElementChild.checked, multiplier: Number(pathTypeInput.lastElementChild.value) };
+        }
+
+        return pathProfile;
+    }
+
+    #setPathTypeProfile(profile) {
+        const pathTypeParent = document.getElementById("path-types");
+        for (const pathTypeInput of pathTypeParent.querySelectorAll(".path-type")) {
+            const type = pathTypeInput.querySelector('p').innerText;
+            pathTypeInput.firstElementChild.checked = !((profile[type.toLowerCase()]?.passable) ?? true);
+            pathTypeInput.lastElementChild.value = (profile[type.toLowerCase()]?.multiplier) ?? 0;
+        }
     }
 }
 
@@ -341,6 +451,9 @@ function getDefaultProfiles() {
         [
             "Default",
             new RouteProfile(
+                {},
+                {},
+                {},
                 new RouteFilter(
                     RouteFilterFunction.ALL,
                     true,
@@ -358,6 +471,9 @@ function getDefaultProfiles() {
         [
             "Wheelchair",
             new RouteProfile(
+                {},
+                {},
+                {},
                 new RouteFilter(
                     RouteFilterFunction.ALL,
                     false,

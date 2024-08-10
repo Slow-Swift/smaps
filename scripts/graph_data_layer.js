@@ -80,7 +80,7 @@ export class GraphDataLayer {
             line.tags = edgeData.tags; 
             line.slope = edgeData.slope;
             this.edges.push(line);
-            line.bindPopup(createMessage(
+            line.bindPopup(() => createMessage(
                 `Way ${edgeData.way_id}`, 
                 edgeData.tags, 
                 [`Length ${edgeData.length}`, `slope: ${edgeData.slope}`, `elevation: ${edgeData.elevation}`]));
@@ -170,7 +170,7 @@ function doesFilterMatch(filter, tags) {
         const isValueEmpty = (filter.value.length == 0) || (filter.value.toLowerCase() == "any");
         if (isValueEmpty) return true;
 
-        return tags[filter.tag] == filter.value;
+        return String(tags[filter.tag]) == filter.value;
     }
 
 }

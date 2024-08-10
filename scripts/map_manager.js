@@ -11,6 +11,7 @@ export class MapManager {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(this.map);
+        this.map.setMaxZoom(22);
 
         this.#createMarkers();
 

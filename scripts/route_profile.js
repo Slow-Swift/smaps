@@ -15,9 +15,12 @@ function RffFromString(str) {
 }
 
 export class RouteProfile {
-    constructor(nodeFilter, edgeFilter) {
+    constructor(slopeProfile, crossingProfile, pathTypeProfile, nodeFilter, edgeFilter) {
+        this.slopeProfile = slopeProfile;
+        this.crossingProfile = crossingProfile;
+        this.pathTypeProfile = pathTypeProfile;
         this.nodeFilter = nodeFilter;
-        this.edgeFilter = edgeFilter;
+        this.edgeFilter = edgeFilter;        
     }
 
     isNodeAllowed(node) {
@@ -32,13 +35,22 @@ export class RouteProfile {
 
     toJsonObject() {
         return {
+            slope: this.slopeProfile,
+            crossing: this.crossingProfile,
+            pathType: this.pathTypeProfile,
             nodeFilter: this.nodeFilter.toJsonObject(),
             edgeFilter: this.edgeFilter.toJsonObject(),
         }
     }
 
     static fromJsonObject(json) {
-        return new RouteProfile(RouteFilter.fromJsonObject(json.nodeFilter), RouteFilter.fromJsonObject(json.edgeFilter));
+        return new RouteProfile(
+            json.slope,
+            json.crossing,
+            json.pathType,
+            RouteFilter.fromJsonObject(json.nodeFilter), 
+            RouteFilter.fromJsonObject(json.edgeFilter)
+        );
     }
 }
 

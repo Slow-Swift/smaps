@@ -109,17 +109,101 @@ function add_node_to_graph(graph, node) {
         tags: node.tags
     };
 
+    if (node.tags != undefined) {
+        if (node.tags.barrier == "kerb") {
+            let ramp = false;
+            ramp |= node.tags.kerb == "flush";
+            ramp |= node.tags.kerb == "lowered";
+            ramp |= node.tags.kerb == "no";
+            node.tags.ramp = ramp ? "yes" : "no";
+        }
+    }
+
     graph.addVertex(node.id, node_data);
+}
+
+const pathTypes = {
+    paved: [
+        "paved",
+        "asphalt",
+        "chipseal",
+        "concrete",
+        "concrete:lanes",
+        "concrete:plates",
+        "paving_stones",
+        "bricks",
+        "metal",
+    ],
+    unpaved: [
+        "unpaved",
+        "compacted",
+        "fine_gravel",
+        "gravel",
+        "pebblestone",
+    ],
+    cobblestone: [
+        "unhewn_cobblestone",
+        "cobblestone",
+        "sett",
+    ],
+    dirt: [
+        "ground",
+        "dirt",
+        "earth",
+        "grass",
+        "grass-paver",
+        "mud",
+        "sand",
+        "rock",
+    ]
 }
 
 function add_way_to_graph(graph, way, max_dst) {
     const nodes = way.nodes;
 
+    if (way.tags.footway == "crossing") {
+        let hasMarkings = way.tags.crossing != undefined && way.tags.crossing != "unmarked" && way.tags["crossing:markings"] != "no";
+        let hasTactile = way.tags.tactile_paving == "yes";
+        let hasButton = way.tags.button_operated == "yes" || way.tags.flashing_lights == "button";
+        let hasSignal = way.tags.crossing == "traffic_signals" || way.tags["crossing:signals"] == "yes";
+        let hasSounds = way.tags["traffic_signals:sound"] == "yes";
+        
+        for (let i = 0; i < nodes.length; i++) {
+            let node = graph.getVertex(nodes[i]);
+            if (node.tags == undefined) continue;
+            if (node.tags.highway != "crossing") continue;
+            hasMarkings ||= node.tags.crossing != undefined && node.tags.crossing != "unmarked";
+            hasMarkings &&= node.tags["crossing:markings"] != "no";
+            hasTactile ||= node.tags.tactile_paving == "yes";
+            hasButton ||= node.tags.button_operated == "yes" || node.tags.flashing_lights == "button";
+            hasSignal ||= node.tags.crossing == "traffic_signals" || node.tags["crossing:signals"] == "yes";
+            hasSounds ||= node.tags["traffic_signals:sound"] == "yes";
+        }
+
+        hasSignal ||= hasButton;
+
+        way.tags.hasMarkings = hasMarkings;
+        way.tags.hasTactile = hasTactile;
+        way.tags.hasSignal = hasSignal;
+        way.tags.hasSounds = hasSounds;
+    }
+
+    way.tags.pathType = "other";
+    if (way.tags.surface == undefined) way.tags.pathType = "unkown";
+    outer: for (const type in pathTypes) {
+        for (const surfaceType of pathTypes[type]) {
+            if (way.tags.surface == surfaceType) {
+                way.tags.pathType = type;
+                break outer;
+            }
+        }
+    } 
+
     // Add all the edges that make up the way
     for (let i = 0, j = 1; j < nodes.length; i++, j++) {
         // Calculate edge length
         let node_0 = graph.getVertex(nodes[i]);
-        const node_1 = graph.getVertex(nodes[j]);
+        const node_1 = graph.getVertex(nodes[j]); 
         let distance = haversine(node_0.latlon, node_1.latlon);
 
         if (max_dst && distance > max_dst) {

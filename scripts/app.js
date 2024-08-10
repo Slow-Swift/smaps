@@ -36,16 +36,14 @@ async function initialize_graph() {
             v = graph.getVertex(v);
             return new Vector(
                 haversine(v.latlon, window.targetNode.latlon),
-                Math.abs(v.elevation - window.targetNode.elevation),
-                0,
+                haversine(v.latlon, window.targetNode.latlon),
             );
         },
         (from, to) => {
             let edge = graph.getEdge(from, to);
             let weight = new Vector(
                 edge.length,
-                edge.elevation,
-                edge.tags.slope,
+                edge.effectiveLength,
             );
             return weight;
         },
@@ -53,11 +51,59 @@ async function initialize_graph() {
             return new Vector(
                 cost1[0] + cost2[0],
                 cost1[1] + cost2[1],
-                Math.max(cost1[2], cost2[2]),
             );
         },
-        3,
+        (from, to) => {
+            return graph.getEdge(from, to).passable;
+        },
+        (node) => {
+            return graph.getVertex(node).tags.ramp != "no" || !(profile.crossingProfile.ramp?.required ?? false);
+        },
+        (node) => {
+            return new Vector(0,0);
+        },
+        2,
     );
+}
+
+window.applyProfile = function (profile) {
+    for (const edge of window.graph.iterEdges()) {
+        let passable = true;
+        if (!(profile.slopeProfile.max == null || profile.slopeProfile.max == undefined || profile.slopeProfile.max == NaN))
+            passable &&= (edge.slope <= profile.slopeProfile.max) || (edge.length < (profile.slopeProfile.ignoreSlopeLength ?? 0));
+
+        if (edge.way_id == 1112414886) {
+            console.log("YO");
+        } 
+        
+        let steps = edge.tags.highway == "steps" && edge.tags.ramp != "yes";
+        passable &&= (profile.pathTypeProfile.stairs?.passable ?? true) || !steps;
+        passable &&= profile.pathTypeProfile[edge.tags.pathType]?.passable ?? true;
+
+        const length = edge.length;
+        let effectiveLength = length;
+        effectiveLength += length * edge.slope * (profile.slopeProfile?.multiplier ?? 0);
+        effectiveLength += steps ? length * (profile.pathTypeProfile.stairs?.multiplier ?? 0) : 0;
+        effectiveLength += length * (profile.pathTypeProfile[edge.tags.pathType]?.multiplier ?? 0);
+
+        if (edge.tags?.footway == "crossing" || edge.tags?.cycleway == "crossing") {
+            effectiveLength += length * (profile.crossingProfile.base ?? 0);
+            effectiveLength += edge.tags?.hasMarkings ? 0 : length * (profile.crossingProfile.marked?.weight ?? 0);
+            effectiveLength += edge.tags?.hasTactile ? 0 : length * (profile.crossingProfile.tactile?.weight ?? 0);
+            effectiveLength += edge.tags?.hasSignal ? 0 : length * (profile.crossingProfile.signal?.weight ?? 0);
+            effectiveLength += edge.tags?.hasSounds ? 0 : length * (profile.crossingProfile.sound?.weight ?? 0);
+
+            passable &&= edge.tags?.hasMarkings || !(profile.crossingProfile.marked?.required ?? false);
+            passable &&= edge.tags?.hasTactile || !(profile.crossingProfile.tactile?.required ?? false);
+            passable &&= edge.tags?.hasSignal || !(profile.crossingProfile.signal?.required ?? false);
+            passable &&= edge.tags?.hasSounds || !(profile.crossingProfile.sound?.required ?? false);
+        }
+
+        edge.passable = passable;
+        edge.effectiveLength = effectiveLength;
+        edge.tags.passable = passable;
+        edge.tags.effectiveLength = effectiveLength; 
+    }
 }
 
 function on_show_data_pressed() {

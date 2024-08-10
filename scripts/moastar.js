@@ -11,12 +11,15 @@ export class MOA_Star {
      * @param {Function} getWeight The function to get the weight for each node
      * @param {Number} dimensions The number of objectives to optimize on
      */
-    constructor(graph, getHeuristic, getWeight, addCosts, dimensions) {
+    constructor(graph, getHeuristic, getWeight, addCosts, isEdgePassable, isNodePassable, getNodeWeight, dimensions) {
         this.graph = graph;
         this.getHeuristic = getHeuristic;
         this.dimensions = dimensions;
         this.getWeight = getWeight;
         this.addCosts = addCosts;
+        this.isEdgePassable = isEdgePassable;
+        this.isNodePassable = isNodePassable;
+        this.getNodeWeight = getNodeWeight;
         this.openLabels = new Heap((a,b) => Vector.compareLex(a[2], b[2]));
         this.costs = new Array();
         this.costs_t = new Array();
@@ -24,8 +27,7 @@ export class MOA_Star {
         this.backpointers = new Map();
     }
 
-    pathfind(start, end, profile) {
-        this.profile = profile;
+    pathfind(start, end) {
         this.#initializePathfinding(start, end);
 
         let label = this.#getNextLabel();
@@ -108,8 +110,13 @@ export class MOA_Star {
         const [node, cost, f] = label;
         const nodeData = this.nodeData.get(node);
         for (let neighbor of this.graph.iterNeighbors(node)) {
-            if (!this.#isEdgeTraversible(node, neighbor)) continue;
-            const edgeWeight = this.#getEdgeWeight(node, neighbor);
+            if (!this.isNodePassable(neighbor)) {
+                this.nodeData.set(neighbor, {});
+                continue;
+            };
+            if (!this.isEdgePassable(node, neighbor)) continue;
+            const nodeWeight = this.getNodeWeight(neighbor);
+            const edgeWeight = this.addCosts(this.#getEdgeWeight(node, neighbor), nodeWeight);
             const pathCost = this.addCosts(cost, edgeWeight);
             const solutionEstimate = this.addCosts(pathCost, this.getHeuristic(neighbor));
 
@@ -125,12 +132,6 @@ export class MOA_Star {
                 }
             }
         }
-    }
-
-    #isEdgeTraversible(fromNode, toNode) {
-        if (this.profile == null || this.profile == undefined) return true;
-        if (!this.profile.isNodeAllowed(this.graph.getVertex(toNode))) return false;
-        return this.profile.isEdgeAllowed(this.graph.getEdge(fromNode, toNode));
     }
 
     #getEdgeWeight(node1, node2) {
