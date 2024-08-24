@@ -96,7 +96,7 @@ export class MOA_Star {
                     if (fromNode != currentNode) continue;
 
                     currentNode = toNode;
-                    solution_cost = this.nodeData.get(currentNode).closed[costIndex];
+                    solution_cost = this.nodeData.get(currentNode)?.closed[costIndex] ?? null;
                     path.unshift(currentNode);
                     break;
                 }
@@ -206,6 +206,7 @@ export class MOA_Star {
         } else {
             this.backpointers.get(cost.toString()).push(backpointer);
         }
+        
     }
 
 }

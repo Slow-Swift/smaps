@@ -16,7 +16,6 @@
     <!-- <script type="module" src="scripts/graph_loader.js"></script>
     <script type="module" src="scripts/graph.js"></script> -->
     <script type="module" src="scripts/app.js"></script>
-    <script src="scripts/interactive_elements.js"></script>
     <script src="scripts/custom_elements.js"></script>
 </head>
 <body class="light-theme">
@@ -24,7 +23,7 @@
     <div id="controls">
         <button id="btn-calculate-routes", class="btn">Calculate Routes</button>
         <div class="dropdown">
-            <button class="btn">Select the routes to display</button>
+            <button class="btn dropbtn">Select the routes to display</button>
             <div id="routeDropdownContent" class="dropdown-content top"></div>
         </div>
         <button id="show-data-btn" class="checkbox-btn btn">Show Graph Data</button>
@@ -33,7 +32,7 @@
     </div>
 
     
-    <div id="bbox-confirmer" class="confirmer btn"> 
+    <div id="bbox-confirmer" class="confirmer"> 
         <button class="btn">Done</button>
     </div>
     
@@ -81,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div>
+        <div class="menu-btns">
             <button class="btn" onclick="window.hide_filters()">Close</button>
             <button id="apply-filters-btn" class="btn">Apply</button>
             <button id="save-menu-btn" class="btn" onclick="window.show_save_menu()">Saves</button>
@@ -102,7 +101,7 @@
                 <h4>Save 1</h4>
             </div>
         </div>
-        <div>
+        <div class="menu-btns">
             <button class="btn" onclick="hide_save_menu()">Close</button>
             <button id="load-config-btn" class="btn">Load</button>
             <button id="delete-config-btn" class="btn">Delete</button>
@@ -118,7 +117,7 @@
                 <h4>Save 1</h4>
             </div>
         </div>
-        <div>
+        <div class="menu-btns">
             <button class="btn" onclick=hideMenu(this)>Close</button>
             <button id="create-profile-btn" class="btn">Create</button>
             <button id="edit-profile-btn" class="btn">Edit</button>
@@ -130,15 +129,24 @@
         <div class="draggable-header">
             <h3>Routing Profile</h3>
         </div>
-        <div class="input-wrapper">
-            <label>Profile Name</label>
-            <input id="profile-name-input" class="search-input" type="text">
+        <div class="input-container">
+            <input id="profile-name-input" class="rounded-input" type="text" placeholder="">
+            <label for="profile-name-input">Profile Name</label>
         </div>
         <div>
             <p>Slope</p>
-            <input type="text" id="slope-multiplier-input" class="rounded-input">
-            <input type="text" id="max-slope-input" class="rounded-input">
-            <input type="text" id="ignore-slope-length-input" class="rounded-input">
+            <div class="input-container">
+                <input type="text" id="slope-multiplier-input" class="rounded-input small-input" placeholder="">
+                <label for="slope-multiplier-input">Weight</label>
+            </div>
+            <div class="input-container">
+                <input type="text" id="max-slope-input" class="rounded-input small-input" placeholder="">
+                <label for="max-slope-input">Max Slope</label>
+            </div>
+            <div class="input-container">
+                <input type="text" id="ignore-slope-length-input" class="rounded-input small-input" placeholder="">
+                <label for="ignore-slope-length-input">Tolerance</label>
+            </div>
         </div>
         <div>
             <p>Crossing</p>
@@ -149,49 +157,55 @@
             <div id="open-path-type-menu" class="toggle-btn">Configure</div>
         </div>
         <div id="open-advanced-filter-menu" class="toggle-btn">Advanced Filters</div>
-        <div>
+        <div class="menu-btns">
             <button id="close-create-profile-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
             <button id="create-profile-done-btn" class="btn">Done</button>
         </div>
-        
     </div>
 
     <div id="crossing-score-menu" class="floating-window draggable">
         <div class="draggable-header">
             <h3>Crossing Score Menu</h3>
         </div>
-        <div>
-            <div id="crossing-base-input" class="crossing-feature">
-                <p>Base</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div id="crossing-ramp-input" class="crossing-feature">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Has Ramps</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div id="crossing-marked-input" class="crossing-feature">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Is Marked</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div id="crossing-tactile-input" class="crossing-feature">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Has Tactile Paving</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div id="crossing-signal-input" class="crossing-feature">
-                <input type="checkbox" name="Test" class="checkbox-btn">
-                <p>Has Signals</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div id="crossing-sound-input" class="crossing-feature">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Has Sounds</p>
-                <input type="text" class="rounded-input">
-            </div>
-        </div>
-        <div>
+        <table>
+            <tr>
+                <th>Feature</th>
+                <th>Required</th>
+                <th>Weight</th>
+            </tr>
+            <tr id="crossing-base-input">
+                <td>Base</td>
+                <td></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr id="crossing-ramp-input">
+                <td>Has Ramps</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr id="crossing-marked-input">
+                <td>Is Marked</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr id="crossing-tactile-input">
+                <td>Has Tactile Paving</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr id="crossing-signal-input">
+                <td>Has Signals</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr id="crossing-sound-input">
+                <td>Has Sounds</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+        </table>
+        
+        <div class="menu-btns">
             <button class="btn" onclick=hideMenu(this)>Done</button>
         </div>
     </div>
@@ -200,34 +214,40 @@
         <div class="draggable-header">
             <h3>Path Type Menu</h3>
         </div>
-        <div id="path-types">
-            <div class="path-type">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Stairs</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div class="path-type">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Paved</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div class="path-type">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Unpaved</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div class="path-type">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Cobblestone</p>
-                <input type="text" class="rounded-input">
-            </div>
-            <div class="path-type">
-                <input type="checkbox" name="" class="checkbox-btn">
-                <p>Dirt</p>
-                <input type="text" class="rounded-input">
-            </div>
-        </div>
-        <div>
+        <table id="path-types">
+            <tr>
+                <th>Path Type</th>
+                <th>Passable</th>
+                <th>Weight</th>
+            </tr>
+            <tr class="path-type">
+                <td>Stairs</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr class="path-type">
+                <td>Paved</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr class="path-type">
+                <td>Unpaved</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr class="path-type">
+                <td>Cobblestone</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+            <tr class="path-type">
+                <td>Dirt</td>
+                <td><input type="checkbox" class="checkbox-btn"></td>
+                <td><input type="text" class="rounded-input small-input"></td>
+            </tr>
+        </table>
+        
+        <div class="menu-btns">
             <button class="btn" onclick=hideMenu(this)>Done</button>
         </div>
     </div>
@@ -244,7 +264,7 @@
             <button class="collapsible">Edge Filters</button>
             <div id="edge-profile-filters" class="collapsible-content"></div>
         </div>
-        <div>
+        <div class="menu-btns">
             <button id="close-advanced-filter-btn" class="btn" onclick=hideMenu(this)>Cancel</button>
         </div>
     </div>

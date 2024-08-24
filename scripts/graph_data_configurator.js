@@ -181,8 +181,8 @@ export class GraphDataConfigurator {
             }
         }
 
-        document.getElementById('node-size-input').value = configuration.nodeSize;
-        document.getElementById('edge-size-input').value = configuration.edgeSize;
+        document.getElementById('node-size-spinner').setValue(configuration.nodeSize);
+        document.getElementById('edge-size-spinner').setValue(configuration.edgeSize);
         this.#setBBox(configuration.bbox);
     }
 
@@ -201,8 +201,8 @@ export class GraphDataConfigurator {
     #getUIConfiguration() {
         const filterInfo = {};
         filterInfo.bbox = this.bbox;
-        filterInfo.nodeSize = parseInt(document.getElementById('node-size-input').value);
-        filterInfo.edgeSize = parseInt(document.getElementById('edge-size-input').value);
+        filterInfo.nodeSize = document.getElementById('node-size-spinner').getValue();
+        filterInfo.edgeSize = document.getElementById('edge-size-spinner').getValue();
     
         const nodeFilterContainer = document.getElementById('node-filters');
         const edgeFilterContainer = document.getElementById('edge-filters');

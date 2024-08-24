@@ -90,7 +90,7 @@ export class GraphDataLayer {
             const circle = L.circle(node.latlon,{ fillOpacity: 1, radius: .5 }).addTo(this.mapLayer);
             circle.tags = node.tags;
             this.nodes.push(circle);
-            circle.bindPopup(createMessage(`Node: ${node.id}`, node.tags));
+            circle.bindPopup(() => createMessage(`Node: ${node.id}`, node.tags));
         }
     }
 }
@@ -175,7 +175,15 @@ function doesFilterMatch(filter, tags) {
 
 }
 
-function lerpColor(startColor, endColor, percent) {
+/**
+ * Get the color between two colors based on a percentage.
+ * 
+ * @param {string} startColor
+ * @param {string} endColor
+ * @param {number} percent
+ * @returns {string}
+ */
+function lerpColor(startColor, endColor, percent) {    
     // Convert hex to RGB
     const startRGB = {
       r: parseInt(startColor.slice(1, 3), 16),
@@ -183,6 +191,7 @@ function lerpColor(startColor, endColor, percent) {
       b: parseInt(startColor.slice(5, 7), 16)
     };
     
+    // Convert hex to RGB
     const endRGB = {
       r: parseInt(endColor.slice(1, 3), 16),
       g: parseInt(endColor.slice(3, 5), 16),

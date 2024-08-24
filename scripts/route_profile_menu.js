@@ -28,7 +28,7 @@ export class RouteProfileMenu {
         document.getElementById('delete-profile-btn').addEventListener('click', this.#onDeletePressed.bind(this));
         document.getElementById('open-crossing-menu').addEventListener('click', this.#openCrossingMenu.bind(this));
         document.getElementById('open-path-type-menu').addEventListener('click', this.#openPathTypeMenu.bind(this));
-        document.getElementById('open-advanced-filter-menu').addEventListener('click', this.#openAdvancedFilterMenu.bind(this));
+        document.getElementById('open-advanced-filter-menu').addEventListener('click', this.#openAdvancedFilterMenu.bind(this));        
     }
 
     showCreateMenu() {
@@ -60,7 +60,7 @@ export class RouteProfileMenu {
         this.#profiles = profiles;
 
         this.#profileListElement.replaceChildren();
-        this.#selectedProfileIndex = localStorage.getItem('selectedProfileIndex') ?? 0;
+        this.#selectedProfileIndex = Number(localStorage.getItem('selectedProfileIndex')) ?? 0;
         
         if (this.#selectedProfileIndex < 0) {
             this.#selectedProfileIndex = 0;
@@ -92,14 +92,13 @@ export class RouteProfileMenu {
     }
 
     #profileItemClicked(item) {
-        const newlySelected = this.selectedSaveItem == item ? null : item;
         this.selectedSaveItem?.classList.remove('selected');
-        this.selectedSaveItem = newlySelected;
+        this.selectedSaveItem = item;
         this.#selectedProfileIndex = this.selectedSaveItem.index;
         window.profile = this.#profiles[this.#selectedProfileIndex][1];
         window.applyProfile(window.profile);
         localStorage.setItem('selectedProfileIndex', this.#selectedProfileIndex);
-        newlySelected?.classList.add('selected'); 
+        item.classList.add('selected'); 
     }
 
     #onDoneCreatePressed() {
@@ -183,6 +182,7 @@ export class RouteProfileMenu {
     }
 
     #getCrossingProfile() {
+        // Each of these are rows in the crossing profile table.
         const baseInput = document.getElementById("crossing-base-input");
         const rampInput = document.getElementById("crossing-ramp-input");
         const markedInput = document.getElementById("crossing-marked-input");
@@ -191,16 +191,32 @@ export class RouteProfileMenu {
         const soundInput = document.getElementById("crossing-sound-input");
 
         return {
-            base: Number(baseInput.lastElementChild.value),
-            ramp: { required: rampInput.firstElementChild.checked, weight: Number(rampInput.lastElementChild.value) },
-            marked: { required: markedInput.firstElementChild.checked, weight: Number(markedInput.lastElementChild.value) },
-            tactile: { required: tactileInput.firstElementChild.checked, weight: Number(tactileInput.lastElementChild.value) },
-            signal: { required: signalInput.firstElementChild.checked, weight: Number(signalInput.lastElementChild.value) },
-            sound: { required: soundInput.firstElementChild.checked, weight: Number(soundInput.lastElementChild.value) },
-        }
+            base: parseFloat(baseInput.querySelector('input[type="text"]').value),
+            ramp: {
+                required: rampInput.querySelector('input[type="checkbox"]').checked,
+                weight: parseFloat(rampInput.querySelector('input[type="text"]').value)
+            },
+            marked: {
+                required: markedInput.querySelector('input[type="checkbox"]').checked,
+                weight: parseFloat(markedInput.querySelector('input[type="text"]').value)
+            },
+            tactile: {
+                required: tactileInput.querySelector('input[type="checkbox"]').checked,
+                weight: parseFloat(tactileInput.querySelector('input[type="text"]').value)
+            },
+            signal: {
+                required: signalInput.querySelector('input[type="checkbox"]').checked,
+                weight: parseFloat(signalInput.querySelector('input[type="text"]').value)
+            },
+            sound: {
+                required: soundInput.querySelector('input[type="checkbox"]').checked,
+                weight: parseFloat(soundInput.querySelector('input[type="text"]').value)
+            }
+        };
     }
 
     #setCrossingProfile(profile) {
+        // Each of these are rows in the crossing profile table.
         const baseInput = document.getElementById("crossing-base-input");
         const rampInput = document.getElementById("crossing-ramp-input");
         const markedInput = document.getElementById("crossing-marked-input");
@@ -208,36 +224,52 @@ export class RouteProfileMenu {
         const signalInput = document.getElementById("crossing-signal-input");
         const soundInput = document.getElementById("crossing-sound-input");
 
-        baseInput.lastElementChild.value = profile.base ?? 0;
-        rampInput.firstElementChild.checked = profile.ramp?.required ?? false;
-        rampInput.lastElementChild.value = profile.ramp?.weight ?? 0;
-        markedInput.firstElementChild.checked = profile.marked?.required ?? false;
-        markedInput.lastElementChild.value = profile.marked?.weight ?? 0;
-        tactileInput.firstElementChild.checked = profile.tactile?.required ?? false;
-        tactileInput.lastElementChild.value = profile.tactile?.weight ?? 0;
-        signalInput.firstElementChild.checked = profile.signal?.required ?? false;
-        signalInput.lastElementChild.value = profile.signal?.weight ?? 0;
-        soundInput.firstElementChild.checked = profile.sound?.required ?? false;
-        soundInput.lastElementChild.value = profile.sound?.weight ?? 0;
+        // Set the values of the input elements to the values in the profile.
+        baseInput.querySelector('input[type="text"]').value = profile.base ?? 0;
+        rampInput.querySelector('input[type="checkbox"]').checked = profile.ramp?.required ?? false;
+        rampInput.querySelector('input[type="text"]').value = profile.ramp?.weight ?? 0;
+        markedInput.querySelector('input[type="checkbox"]').checked = profile.marked?.required ?? false;
+        markedInput.querySelector('input[type="text"]').value = profile.marked?.weight ?? 0;
+        tactileInput.querySelector('input[type="checkbox"]').checked = profile.tactile?.required ?? false;
+        tactileInput.querySelector('input[type="text"]').value = profile.tactile?.weight ?? 0;
+        signalInput.querySelector('input[type="checkbox"]').checked = profile.signal?.required ?? false;
+        signalInput.querySelector('input[type="text"]').value = profile.signal?.weight ?? 0;
+        soundInput.querySelector('input[type="checkbox"]').checked = profile.sound?.required ?? false;
+        soundInput.querySelector('input[type="text"]').value = profile.sound?.weight ?? 0;
     }
 
+    /**
+     * Gets the path type profile from the menu.
+     * @returns 
+     */
     #getPathTypeProfile() {
         const pathProfile = {};
         const pathTypeParent = document.getElementById("path-types");
+
+        // Loop through all of the path types and get their values to build the profile
         for (const pathTypeInput of pathTypeParent.querySelectorAll(".path-type")) {
-            const type = pathTypeInput.querySelector('p').innerText;
-            pathProfile[type.toLowerCase()] = { passable: !pathTypeInput.firstElementChild.checked, multiplier: Number(pathTypeInput.lastElementChild.value) };
+            const type = pathTypeInput.firstElementChild.innerText;
+            pathProfile[type.toLowerCase()] = { 
+                passable: pathTypeInput.querySelector('input[type="checkbox"]').checked, 
+                multiplier: Number(pathTypeInput.querySelector('input[type="text"]').value), 
+            };
         }
 
         return pathProfile;
     }
 
+    /**
+     * Sets the path type menu to the given profile.
+     * @param profile 
+     */
     #setPathTypeProfile(profile) {
         const pathTypeParent = document.getElementById("path-types");
+
+        // Loop through all of the path types and set their values to the given profile.
         for (const pathTypeInput of pathTypeParent.querySelectorAll(".path-type")) {
-            const type = pathTypeInput.querySelector('p').innerText;
-            pathTypeInput.firstElementChild.checked = !((profile[type.toLowerCase()]?.passable) ?? true);
-            pathTypeInput.lastElementChild.value = (profile[type.toLowerCase()]?.multiplier) ?? 0;
+            const type = pathTypeInput.firstElementChild.innerText;
+            pathTypeInput.querySelector('input[type="checkbox"]').checked = (profile[type.toLowerCase()]?.passable) ?? true;
+            pathTypeInput.querySelector('input[type="text"]').value = (profile[type.toLowerCase()]?.multiplier) ?? 0;
         }
     }
 }
@@ -246,8 +278,10 @@ class FilterVisual {
     #filter = null;
     #filterOptions = null;
     #currentType = null;
+    #tagInputContainer = null;
     #tagInput = null;
     #valueInput = null;
+    #valueInputContainer = null;
     #addButton = null;
     #deleteButton = null;
     #childFilters = [];
@@ -276,15 +310,29 @@ class FilterVisual {
         this.#filter.appendChild(this.#filterOptions);
         this.#filterOptions.appendChild(this.#dropdown);
 
+        this.#tagInputContainer = document.createElement('div');
+        this.#tagInputContainer.classList.add('input-container');
         this.#tagInput = document.createElement('input');
         this.#tagInput.type = "text"; 
+        this.#tagInput.placeholder = "";
         this.#tagInput.classList.add('rounded-input');
-        this.#tagInput.placeholder = "Tag";
+        this.#tagInput.classList.add('small-input');
+        const tagInputLabel = document.createElement('label');
+        tagInputLabel.innerText = "Tag";
+        this.#tagInputContainer.appendChild(this.#tagInput);
+        this.#tagInputContainer.appendChild(tagInputLabel);
 
+        this.#valueInputContainer = document.createElement('div');
+        this.#valueInputContainer.classList.add('input-container');
         this.#valueInput = document.createElement('input');
         this.#valueInput.type = "text";
         this.#valueInput.classList.add('rounded-input');
-        this.#valueInput.placeholder = "Value";
+        this.#valueInput.classList.add('small-input');
+        this.#valueInput.placeholder = "";
+        const valueInputLabel = document.createElement('label');
+        valueInputLabel.innerText = "Value";
+        this.#valueInputContainer.appendChild(this.#valueInput);
+        this.#valueInputContainer.appendChild(valueInputLabel);
 
         this.#addButton = document.createElement('div');
         this.#addButton.classList.add("round-btn");
@@ -369,8 +417,8 @@ class FilterVisual {
             case RouteFilterFunction.ALL:
             case RouteFilterFunction.ANY:
             case RouteFilterFunction.NONE:
-                this.#tagInput.parentElement?.removeChild(this.#tagInput);
-                this.#valueInput.parentElement?.removeChild(this.#valueInput);
+                this.#tagInputContainer.parentElement?.removeChild(this.#tagInputContainer);
+                this.#valueInputContainer.parentElement?.removeChild(this.#valueInputContainer);
                 this.#deleteButton.parentElement?.removeChild(this.#deleteButton); 
                 this.#filterOptions.insertBefore(this.#acceptToggle, this.#filterOptions.firstChild);
                 this.#filterOptions.appendChild(this.#addButton);
@@ -379,19 +427,19 @@ class FilterVisual {
             case RouteFilterFunction.IN:
             case RouteFilterFunction.NOT_IN:
                 this.#acceptToggle.parentElement?.removeChild(this.#acceptToggle);
-                this.#valueInput.parentElement?.removeChild(this.#valueInput);
+                this.#valueInputContainer.parentElement?.removeChild(this.#valueInputContainer);
                 this.#addButton.parentElement?.removeChild(this.#addButton);
                 this.#deleteButton.parentElement?.removeChild(this.#deleteButton); 
                 this.#childFiltersElement.parentElement?.removeChild(this.#childFiltersElement);
-                this.#filterOptions.appendChild(this.#tagInput);
+                this.#filterOptions.appendChild(this.#tagInputContainer);
                 break;
             default:
                 this.#acceptToggle.parentElement?.removeChild(this.#acceptToggle);
                 this.#addButton.parentElement?.removeChild(this.#addButton);
                 this.#deleteButton.parentElement?.removeChild(this.#deleteButton); 
                 this.#childFiltersElement.parentElement?.removeChild(this.#childFiltersElement);
-                this.#filterOptions.appendChild(this.#tagInput);
-                this.#filterOptions.appendChild(this.#valueInput);
+                this.#filterOptions.appendChild(this.#tagInputContainer);
+                this.#filterOptions.appendChild(this.#valueInputContainer);
         }
         if (this.#depth > 0) this.#filterOptions.appendChild(this.#deleteButton);
 
@@ -451,64 +499,60 @@ function getDefaultProfiles() {
         [
             "Default",
             new RouteProfile(
-                {},
-                {},
+                {
+                    multiplier: 5
+                },
+                {
+                    base: 4,
+                    ramp: {required: false, weight: 0},
+                    marked: {required: false, weight: 1},
+                    tactile: {required: false, weight: 0},
+                    signal: {required: false, weight: 3},
+                    sound: {required: false, weight: 0},
+                },
                 {},
                 new RouteFilter(
                     RouteFilterFunction.ALL,
                     true,
-                    "",
-                    "",
+                    [],
                 ),
                 new RouteFilter(
                     RouteFilterFunction.ALL,
                     true,
-                    "",
-                    "",
+                    [],
                 ),
             )
         ],
         [
             "Wheelchair",
             new RouteProfile(
-                {},
-                {},
-                {},
+                {
+                    max: 0.1, multiplier: 10, ignoreSlopeLength: 6
+                },
+                {
+                    base: 6,
+                    ramp: {required: true, weight: 1},
+                    marked: {required: false, weight: 2},
+                    tactile: {required: false, weight: 0},
+                    signal: {required: false, weight: 8},
+                    sound: {required: false, weight: 0},
+                },
+                {
+                    stairs: {passable: false, multiplier: 0},
+                    paved: {passable: true, multiplier: 0},
+                    unpaved: {passable: true, multiplier: 10},
+                    cobblestone: {passable: false, multiplier: 0},
+                    dirt: {passable: false, multiplier: 0},
+                },
                 new RouteFilter(
                     RouteFilterFunction.ALL,
-                    false,
-                    [
-                        new RouteFilter(
-                            RouteFilterFunction.EQ,
-                            true,
-                            "barrier",
-                            "kerb",
-                        ),
-                        new RouteFilter(
-                            RouteFilterFunction.EQ,
-                            true,
-                            "kerb",
-                            "raised",
-                        )
-                    ]
+                    true,
+                    [],
                 ),
                 new RouteFilter(
-                    RouteFilterFunction.ANY,
+                    RouteFilterFunction.ALL,
                     true,
-                    [
-                        new RouteFilter(
-                            RouteFilterFunction.NEQ,
-                            true,
-                            "highway",
-                            "steps",
-                        ),
-                        new RouteFilter(
-                            RouteFilterFunction.EQ,
-                            true,
-                            "ramp",
-                            "yes",
-                        )
-                    ]
+                    []
                 )
             )
         ]

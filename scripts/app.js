@@ -13,11 +13,11 @@ window.onload = on_load;
 async function on_load() {
     console.log("Loaded");
     await initialize_graph();
+    initialize_interactive_elements();
     window.map = new MapManager(graph);
     window.graphDataLayer = new GraphDataLayer(window.map);
     window.gdc = new GraphDataConfigurator(window.map);
     setup_callbacks();
-    initialize_interactive_elements();
     window.routeProfileMenu = new RouteProfileMenu();
 }
 
@@ -57,7 +57,7 @@ async function initialize_graph() {
             return graph.getEdge(from, to).passable;
         },
         (node) => {
-            return graph.getVertex(node).tags.ramp != "no" || !(profile.crossingProfile.ramp?.required ?? false);
+            return graph.getVertex(node).passable;
         },
         (node) => {
             return new Vector(0,0);
@@ -67,14 +67,18 @@ async function initialize_graph() {
 }
 
 window.applyProfile = function (profile) {
+    for (const node of window.graph.iterVertices()) {
+        let passable = true;
+        passable &&= !(profile.crossingProfile.ramp?.required ?? false) || node.tags?.ramp != "no";
+        passable &&= profile.isNodeAllowed(node);
+        node.passable = passable;
+        node.tags.passable = passable;
+    }
+
     for (const edge of window.graph.iterEdges()) {
         let passable = true;
         if (!(profile.slopeProfile.max == null || profile.slopeProfile.max == undefined || profile.slopeProfile.max == NaN))
             passable &&= (edge.slope <= profile.slopeProfile.max) || (edge.length < (profile.slopeProfile.ignoreSlopeLength ?? 0));
-
-        if (edge.way_id == 1112414886) {
-            console.log("YO");
-        } 
         
         let steps = edge.tags.highway == "steps" && edge.tags.ramp != "yes";
         passable &&= (profile.pathTypeProfile.stairs?.passable ?? true) || !steps;
@@ -98,6 +102,8 @@ window.applyProfile = function (profile) {
             passable &&= edge.tags?.hasSignal || !(profile.crossingProfile.signal?.required ?? false);
             passable &&= edge.tags?.hasSounds || !(profile.crossingProfile.sound?.required ?? false);
         }
+
+        passable &&= profile.isEdgeAllowed(edge);
 
         edge.passable = passable;
         edge.effectiveLength = effectiveLength;
@@ -176,29 +182,47 @@ function initialize_interactive_elements() {
     for (const numSpinner of numSpinners) {
         const min = parseInt(numSpinner?.attributes?.min?.value);
         const max = parseInt(numSpinner?.attributes?.max?.value);
-        const buttons = numSpinner.getElementsByTagName('span');
-        for (const button of buttons) {
-            button.onclick = () => {
-                if (button.classList.contains('disabled')) return;
-                const value = button.classList.contains('minus') ? -1 : 1;
-                const input = button.parentElement.getElementsByClassName('in-num')[0];
-                const current = parseFloat(input.value)
-                const newValue = current + value;
-                input.value = newValue;
-                for (const b of button.parentElement.getElementsByTagName('span'))
-                    b.classList.remove('disabled');
 
-                if (newValue == max || newValue == min) {
+        numSpinner.setValue = (v) => {
+            numSpinner.querySelector('input').value = v;
+            for (const button of numSpinner.querySelectorAll('span')) {
+                const isMinusBtn = button.classList.contains('minus');
+                button.classList.remove('disabled');
+
+                if ((isMinusBtn && v == min) || (!isMinusBtn && v == max)) {
                     button.classList.add('disabled');
                 }
+            }
 
-                numSpinner.onchanged?.(newValue);
+            numSpinner.onchanged?.(v);
+        }
+
+        numSpinner.getValue = () => {
+            const input = numSpinner.querySelector('.in-num');
+            return parseFloat(input.value);
+        }
+
+        for (const button of numSpinner.querySelectorAll('span')) {
+            button.onclick = () => {
+                if (button.classList.contains('disabled')) return;
+                const delta = button.classList.contains('minus') ? -1 : 1;
+                const newValue = numSpinner.getValue() + delta;
+                numSpinner.setValue(newValue);
             }
         }
     }
 
     for (const draggable of document.getElementsByClassName('draggable')) {
         setupDraggable(draggable);
+    }
+    
+    for (const dropdown of document.getElementsByClassName('dropbtn')) {
+        dropdown.addEventListener('click', () => dropdown.parentElement.querySelector('.dropdown-content').classList.toggle("show"));   
+        document.addEventListener('click', function(event) {
+            if (!dropdown.parentElement.contains(event.target)) {
+                dropdown.parentElement.querySelector('.dropdown-content').classList.remove('show');
+            }
+        });
     }
 }
 
